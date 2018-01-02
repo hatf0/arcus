@@ -1,0 +1,185 @@
+doctype html
+html(lang="en")
+  head
+    |!= "<meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'><link rel='stylesheet' href='./bootstrap/bootstrap.min.css'><link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css'><link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css'><link rel='stylesheet' href='./adminlte/dist/css/AdminLTE.css'><link rel='stylesheet' href='./adminlte/dist/css/skins/skin-black.css'><link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css'>"
+    title mixtape
+  body(class="hold-transition skin-black sidebar-mini sidebar-collapse")
+    header(class="main-header")
+      
+      a(href="/dashboard", class="logo")
+        span(class="logo-mini")
+          |!= "<b>h</b>A"
+        span(class="logo-lg")
+          |!= "<b>hatf0</b>Admin"
+      nav(class="navbar navbar-static-top", role="navigation")
+        a(href="#", class="sidebar-toggle", data-toggle="push-menu", role="button")
+          span(class="sr-only")
+            |!= "Toggle navigation"
+        div(class="navbar-custom-menu")
+          ul(class="nav navbar-nav")
+            li(class="dropdown user user-menu")
+              a(href="#", class="dropdown-toggle", data-toggle="dropdown")
+                img(src="#{us.profile_pic_url}", class="user-image", alt="User Image")
+                span(class="hidden-xs") #{us.name}
+              ul(class="dropdown-menu")
+                li(class="user-header")
+                  img(src="#{us.profile_pic_url}", class="img-circle", alt="User Image")
+                  p #{us.name}
+                    small #{us.role_name}
+                li(class="user-footer")
+                  div(class="pull-right")
+                    a(href="./logout", class="btn btn-default btn-flat")
+                      |!= "logout"
+                  div(class="pull-left")
+                    a(href="./user-settings", class="btn btn-default btn-flat")
+                      |!= "settings"
+
+    div(class="content-wrapper")
+      section(class="content-header")
+        h1
+          |!= "Server Status"
+          small
+            |!= "Status of VPN server"
+      section(class="content")
+        div(class="box")
+          div(class="box-header with-border")
+            h3(class="box-title")
+              |!= "Status"
+            div(class="box-tools pull-right")
+              button(class="btn btn-box-tool", type="button", data-widget="collapse", data-toggle="tooltip", title="", data-original-title="Collapse")
+                i(class="fa fa-minus")
+          div(class="box-body")
+            |!= "Henlo, world! It is I, the mysterous caper!"
+
+
+
+    aside(class="main-sidebar")
+      section(class="sidebar")
+        ul(class="sidebar-menu", data-widget="tree")
+          li(class="header")
+            |!= "General"
+          
+          li
+            a(href="/dashboard")
+              i(class="fa fa-server")
+              span
+                |!= "Dashboard"
+          
+          li(class="header")
+            |!= "Services"
+          
+          li(class="treeview")
+            a(href="#")
+              i(class="fa fa-shield")
+              span
+                |!= "VPN"
+              span(class="pull-right-container")
+                i(class="fa fa-angle-left pull-right")
+            ul(class="treeview-menu")
+              li(class="active")
+                a(href="#")
+                  i(class="fa fa-server")
+                  |!= "Server Status"
+
+              li
+                a(href="/vpn-add-user")
+                  i(class="fa fa-user-plus")
+                  |!= "Add user"
+
+              li
+                a(href="/vpn-del-user")
+                  i(class="fa fa-user-times")
+                  |!= "Delete user"
+
+              li
+                a(href="/vpn-killswitch")
+                  i(class="fa fa-close")
+                  |!= "Killswitch"
+          
+          li(class="treeview")
+            a(href="#")
+              i(class="fa fa-gamepad")
+              span
+                |!= "Factorio Server"
+              span(class="pull-right-container")
+                i(class="fa fa-angle-left pull-right")
+            ul(class="treeview-menu")
+              li
+                a(href="/factorio-status")
+                  i(class="fa fa-server")
+                  |!= "Server status"
+              li
+                a(href="/factorio-mods")
+                  i(class="fa fa-puzzle-piece")
+                  |!= "Mods"
+              li
+                a(href="/factorio-logs")
+                  i(class="fa fa-file-text")
+                  |!= "Logs"
+              li
+                a(href="/factorio-saves")
+                  i(class="fa fa-save")
+                  |!= "Saves"
+              li
+                a(href="/factorio-config")
+                  i(class="fa fa-sliders")
+                  |!= "Config"
+
+          li(class="header")
+            |!= "Administration"
+
+          li(class="treeview")
+            a(href="#")
+              i(class="fa fa-user")
+              span
+                |!= "Users"
+              span(class="pull-right-container")
+                i(class="fa fa-angle-left pull-right")
+            ul(class="treeview-menu")
+              li
+                a(href="/admin-add-user")
+                  i(class="fa fa-user-plus")
+                  |!= "Add user"
+              li
+                a(href="/admin-del-user")
+                  i(class="fa fa-user-times")
+                  |!= "Delete user"
+              li
+                a(href="/admin-mod-user")
+                  i(class="fa fa-wrench")
+                  |!= "Modify user"
+
+          li(class="treeview")
+            a(href="#")
+              i(class="fa fa-users")
+              span
+                |!= "Roles"
+              span(class="pull-right-container")
+                i(class="fa fa-angle-left pull-right")
+            ul(class="treeview-menu")
+              li
+                a(href="/admin-add-role")
+                  i(class="fa fa-user-plus")
+                  |!= "Add role"
+              li
+                a(href="/admin-del-role")
+                  i(class="fa fa-user-times")
+                  |!= "Delete role"
+              li
+                a(href="/admin-mod-role")
+                  i(class="fa fa-wrench")
+                  |!= "Modify role"
+
+
+
+
+
+
+
+
+
+      script(src="./jquery/jquery-3.2.1.min.js")
+      script(src="./bootstrap/bootstrap.min.js")
+      script(src="./adminlte/dist/js/adminlte.min.js")
+
+
