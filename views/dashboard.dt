@@ -4,6 +4,7 @@ html(lang="en")
     |!= "<meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'><link rel='stylesheet' href='./bootstrap/bootstrap.min.css'><link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css'><link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css'><link rel='stylesheet' href='./adminlte/dist/css/AdminLTE.css'><link rel='stylesheet' href='./adminlte/dist/css/skins/skin-black.css'><link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css'>"
     title mixtape
   body(class="hold-transition skin-black sidebar-mini sidebar-collapse")
+    script(src="./jquery/jquery-3.2.1.min.js")
     header(class="main-header")
       
       a(href="/dashboard", class="logo")
@@ -35,30 +36,37 @@ html(lang="en")
                       |!= "settings"
 
     div(class="content-wrapper")
+      - if(lastError == "ERR_NO_PERMS")
+        div(class="alert alert-error alert-dismissible", id="youArentAllowedInThere")
+          |!= "You aren't allowed to access that page."
+        script
+          |!= "$('#youArentAllowedInThere').delay(3000).fadeOut();"
       section(class="content-header")
         h1
           |!= "Dashboard"
           small
             |!= "Overview of services"
       section(class="content")
-        div(class="box")
-          div(class="box-header with-border")
-            h3(class="box-title")
-              |!= "VPN"
-            div(class="box-tools pull-right")
-              button(class="btn btn-box-tool", type="button", data-widget="collapse", data-toggle="tooltip", title="", data-original-title="Collapse")
-                i(class="fa fa-minus")
-          div(class="box-body")
-            |!= "Henlo, world! It is I, the mysterous caper!"
-        div(class="box")
-          div(class="box-header with-border")
-            h3(class="box-title")
-              |!= "Factorio"
-            div(class="box-tools pull-right")
-              button(class="btn btn-box-tool", type="button", data-widget="collapse", data-toggle="tooltip", title="", data-original-title="Collapse")
-                i(class="fa fa-minus")
-          div(class="box-body")
-            |!= "It's up, nerd!"
+        - if(actualRole.perms & 0x02)
+          div(class="box")
+            div(class="box-header with-border")
+              h3(class="box-title")
+                |!= "VPN"
+              div(class="box-tools pull-right")
+                button(class="btn btn-box-tool", type="button", data-widget="collapse", data-toggle="tooltip", title="", data-original-title="Collapse")
+                  i(class="fa fa-minus")
+            div(class="box-body")
+              |!= "Henlo, world! It is I, the mysterous caper!"
+        - if(actualRole.perms & 0x01)
+          div(class="box")
+            div(class="box-header with-border")
+              h3(class="box-title")
+                |!= "Factorio"
+              div(class="box-tools pull-right")
+                button(class="btn btn-box-tool", type="button", data-widget="collapse", data-toggle="tooltip", title="", data-original-title="Collapse")
+                  i(class="fa fa-minus")
+            div(class="box-body")
+              |!= "It's up, nerd!"
 
 
     aside(class="main-sidebar")
@@ -73,120 +81,124 @@ html(lang="en")
               span
                 |!= "Dashboard"
           
-          li(class="header")
-            |!= "Services"
+          - if(actualRole.perms & 0x02 | actualRole.perms & 0x01)
+            li(class="header")
+              |!= "Services"
           
-          li(class="treeview")
-            a(href="#")
-              i(class="fa fa-shield")
-              span
-                |!= "VPN"
-              span(class="pull-right-container")
-                i(class="fa fa-angle-left pull-right")
-            ul(class="treeview-menu")
-              li
-                a(href="/vpn-status")
-                  i(class="fa fa-server")
-                  |!= "Server Status"
+          - if(actualRole.perms & 0x02)
+            li(class="treeview")
+              a(href="#")
+                i(class="fa fa-shield")
+                span
+                  |!= "VPN"
+                span(class="pull-right-container")
+                  i(class="fa fa-angle-left pull-right")
+              ul(class="treeview-menu")
+                li
+                  a(href="/vpn-status")
+                    i(class="fa fa-server")
+                    |!= "Server Status"
 
-              li
-                a(href="/vpn-add-user")
-                  i(class="fa fa-user-plus")
-                  |!= "Add user"
+                li
+                  a(href="/vpn-add-user")
+                    i(class="fa fa-user-plus")
+                    |!= "Add user"
 
-              li
-                a(href="/vpn-del-user")
-                  i(class="fa fa-user-times")
-                  |!= "Delete user"
+                li
+                  a(href="/vpn-del-user")
+                    i(class="fa fa-user-times")
+                    |!= "Delete user"
 
-              li
-                a(href="/vpn-killswitch")
-                  i(class="fa fa-close")
-                  |!= "Killswitch"
+                li
+                  a(href="/vpn-killswitch")
+                    i(class="fa fa-close")
+                    |!= "Killswitch"
           
-          li(class="treeview")
-            a(href="#")
-              i(class="fa fa-gamepad")
-              span
-                |!= "Factorio Server"
-              span(class="pull-right-container")
-                i(class="fa fa-angle-left pull-right")
-            ul(class="treeview-menu")
-              li
-                a(href="/factorio-status")
-                  i(class="fa fa-server")
-                  |!= "Server status"
-              li
-                a(href="/factorio-mods")
-                  i(class="fa fa-puzzle-piece")
-                  |!= "Mods"
-              li
-                a(href="/factorio-logs")
-                  i(class="fa fa-file-text")
-                  |!= "Logs"
-              li
-                a(href="/factorio-saves")
-                  i(class="fa fa-save")
-                  |!= "Saves"
-              li
-                a(href="/factorio-config")
-                  i(class="fa fa-sliders")
-                  |!= "Config"
+          - if(actualRole.perms & 0x01)
+            li(class="treeview")
+              a(href="#")
+                i(class="fa fa-gamepad")
+                span
+                  |!= "Factorio Server"
+                span(class="pull-right-container")
+                  i(class="fa fa-angle-left pull-right")
+              ul(class="treeview-menu")
+                li
+                  a(href="/factorio-status")
+                    i(class="fa fa-server")
+                    |!= "Server status"
+                li
+                  a(href="/factorio-mods")
+                    i(class="fa fa-puzzle-piece")
+                    |!= "Mods"
+                li
+                  a(href="/factorio-logs")
+                    i(class="fa fa-file-text")
+                    |!= "Logs"
+                li
+                  a(href="/factorio-saves")
+                    i(class="fa fa-save")
+                    |!= "Saves"
+                li
+                  a(href="/factorio-config")
+                    i(class="fa fa-sliders")
+                    |!= "Config"
 
-          li(class="header")
-            |!= "Administration"
+          - if(actualRole.perms & 0x04 | actualRole.perms & 0x08)
+            li(class="header")
+              |!= "Administration"
 
-          li(class="treeview")
-            a(href="#")
-              i(class="fa fa-user")
-              span
-                |!= "Users"
-              span(class="pull-right-container")
-                i(class="fa fa-angle-left pull-right")
-            ul(class="treeview-menu")
-              li
-                a(href="/admin-add-user")
-                  i(class="fa fa-user-plus")
-                  |!= "Add user"
-              li
-                a(href="/admin-del-user")
-                  i(class="fa fa-user-times")
-                  |!= "Delete user"
-              li
-                a(href="/admin-mod-user")
-                  i(class="fa fa-wrench")
-                  |!= "Modify user"
-
-          li(class="treeview")
-            a(href="#")
-              i(class="fa fa-users")
-              span
-                |!= "Roles"
-              span(class="pull-right-container")
-                i(class="fa fa-angle-left pull-right")
-            ul(class="treeview-menu")
-              li
-                a(href="/admin-add-role")
-                  i(class="fa fa-user-plus")
-                  |!= "Add role"
-              li
-                a(href="/admin-del-role")
-                  i(class="fa fa-user-times")
-                  |!= "Delete role"
-              li
-                a(href="/admin-mod-role")
-                  i(class="fa fa-wrench")
-                  |!= "Modify role"
-
-
-
-
-
+          - if(actualRole.perms & 0x04)
+            li(class="treeview")
+              a(href="#")
+                i(class="fa fa-user")
+                span
+                  |!= "Users"
+                span(class="pull-right-container")
+                  i(class="fa fa-angle-left pull-right")
+              ul(class="treeview-menu")
+                li
+                  a(href="/admin-add-user")
+                    i(class="fa fa-user-plus")
+                    |!= "Add user"
+                li
+                  a(href="/admin-del-user")
+                    i(class="fa fa-user-times")
+                    |!= "Delete user"
+                li
+                  a(href="/admin-mod-user")
+                    i(class="fa fa-wrench")
+                    |!= "Modify user"
+          - if(actualRole.perms & 0x08)
+            li(class="treeview")
+              a(href="#")
+                i(class="fa fa-users")
+                span
+                  |!= "Roles"
+                span(class="pull-right-container")
+                  i(class="fa fa-angle-left pull-right")
+              ul(class="treeview-menu")
+                li
+                  a(href="/admin-add-role")
+                    i(class="fa fa-user-plus")
+                    |!= "Add role"
+                li
+                  a(href="/admin-del-role")
+                    i(class="fa fa-user-times")
+                    |!= "Delete role"
+                li
+                  a(href="/admin-mod-role")
+                    i(class="fa fa-wrench")
+                    |!= "Modify role"
 
 
 
 
-      script(src="./jquery/jquery-3.2.1.min.js")
+
+
+
+
+
       script(src="./bootstrap/bootstrap.min.js")
       script(src="./adminlte/dist/js/adminlte.min.js")
 
