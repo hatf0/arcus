@@ -6,7 +6,7 @@ html(lang="en")
     title mixtape
   body(class="hold-transition skin-black sidebar-mini sidebar-collapse")
     script(src="./jquery/jquery-3.2.1.min.js")
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js")
+    script(src="./select2/select2.js")
     script
       |!= "$(document).ready(function() {$('.js-example-basic-multiple').select2({theme: 'classic'});});"
     header(class="main-header")
@@ -64,7 +64,7 @@ html(lang="en")
                 i(class="fa fa-minus")
           form(action="/admin-crt-role", method="post")  
             div(class="box-body")
-              div(class="form-group")
+              div(class="form-group select2-container")
                 label(for="nameOfRole")
                   |!= "Name"
                 input(id="nameOfRole", class="form-control", placeholder="Name of the role", type="username", name="roleName")
@@ -72,7 +72,7 @@ html(lang="en")
                 label(for="descriptionOfRole")
                   |!= "Description"
                 input(id="descriptionOfRole", class="form-control", placeholder="Description of the role", name="roleDesc")
-              div(class="form-group")
+              div(class="form-group select2-container")
                 label(for="permsList")
                   |!= "Permissions"
                 select(class="js-example-basic-multiple form-control", name="permsList", multiple="multiple", id="permsList")

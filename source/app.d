@@ -1,3 +1,5 @@
+module beautiful_admin_panel;
+
 import std.stdio;
 import vibe.d;
 import requests;
@@ -37,6 +39,38 @@ bool isUserPermitted(User us, int id) {
 		}
 	}
 	return false;
+}
+
+void properlyRenderPages(HTTPServerRequest req, HTTPServerResponse res, string templateName = "dashboard.dt") {
+	//Load the role.
+	Role actualRole; //Hardcoded references exist to these in the template..
+	User us;
+	string lastError;
+	if(req.session) {
+		us = req.session.get!User("user");
+		Nullable!Role possibleRole = client.getCollection("web.roles").findOne!Role(["name": us.role_name]);
+		if(!possibleRole.isNull) {
+			actualRole = possibleRole;
+		}
+
+	 	lastError = req.session.get!string("last_error");
+		req.session.set("last_error", "ERR_SUCCESS");
+	}
+
+	//res.render!(templateName, actualRole, us, lastError);
+	switch(templateName) { //Bypass the stupid runtime reading of these var names..
+ 		case "dashboard.dt":
+ 			res.render!("dashboard.dt", actualRole, us, lastError);
+ 			break;
+ 		case "role-add.dt":
+ 			res.render!("role-add.dt", actualRole, us, lastError);
+ 			break;
+ 		case "vpn-status.dt":
+ 			res.render!("vpn-status.dt", actualRole, us, lastError);
+ 			break;
+ 		default:
+ 			break;
+	}
 }
 
 void login(HTTPServerRequest req, HTTPServerResponse res) {
@@ -97,20 +131,12 @@ void vpnStatus(HTTPServerRequest req, HTTPServerResponse res) {
 			req.session.set("last_error", "ERR_NO_PERMS");
 			res.redirect("/dashboard");
 		}
- 		res.render!("vpn-status.dt", us);
+ 		properlyRenderPages(req, res, "vpn-status.dt");
 	}
 }
 
 void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
-	User us = req.session.get!User("user");
-	string lastError = req.session.get!string("last_error");
-	req.session.set("last_error", "ERR_SUCCESS");
-	Nullable!Role role = client.getCollection("web.roles").findOne!Role(["name": us.role_name]);
-	Role actualRole;
-	if(!role.isNull) {
-		actualRole = role;
-	}
-	res.render!("dashboard.dt", us, actualRole, lastError);
+	properlyRenderPages(req, res, "dashboard.dt");
 }
 
 void logout(HTTPServerRequest req, HTTPServerResponse res) {
@@ -133,14 +159,7 @@ string[] genRoleList() {
 }
 
 void role_add(HTTPServerRequest req, HTTPServerResponse res) {
-	User us = req.session.get!User("user");
-	if(!isUserPermitted(us, Permissions.PERM_MANAGE_ROLES)) {
-		req.session.set("last_error", "ERR_NO_PERMS");
-		res.redirect("/dashboard");
-	}
-	string lastError = req.session.get!string("last_error");
-	req.session.set("last_error", "ERR_SUCCESS");
-	res.render!("role-add.dt", us, lastError);
+	properlyRenderPages(req, res, "role-add.dt");
 }
 
 void role_create(HTTPServerRequest req, HTTPServerResponse res) {
