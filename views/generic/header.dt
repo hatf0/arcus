@@ -1,0 +1,34 @@
+include generic/scripts
+script(src="/static/nav.js")
+body(class="hold-transition skin-black sidebar-mini")
+  header(class="main-header")
+    a(href="/general/dashboard", class="logo")
+      span(class="logo-mini")
+        |!= "<b>h</b>VM"
+      span(class="logo-lg")
+        |!= "<b>hatf0</b>VM"
+    nav(class="navbar navbar-static-top", role="navigation")
+      a(href="#", class="sidebar-toggle", data-toggle="push-menu", role="button")
+        span(class="sr-only")
+          |!= "Toggle navigation"
+      div(class="navbar-custom-menu")
+        ul(class="nav navbar-nav")
+          li(class="dropdown user user-menu")
+            a(href="#", class="dropdown-toggle", data-toggle="dropdown")
+              img(src="#{user.profilePicURL}", class="user-image", alt="User Image")
+              span(class="hidden-xs") #{user.name}
+            ul(class="dropdown-menu")
+              li(class="user-header")
+                img(src="#{user.profilePicURL}", class="img-circle", alt="User Image")
+                p #{user.name}
+                  - if(user.admin)
+                    small Admin
+                  - else
+                    small User
+              li(class="user-footer")
+                div(class="pull-right")
+                  a(href="/logout", class="btn btn-default btn-flat")
+                    |!= "Logout"
+                div(class="pull-left")
+                  a(href="/user/settings", class="btn btn-default btn-flat")
+                    |!= "Settings"

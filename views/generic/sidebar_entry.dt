@@ -1,0 +1,19 @@
+li(class="header")
+  | #{category}
+  - foreach(categoryEntry; entries.keys) 
+    - string sectionIcon = _s[categoryEntry];
+    - import bap.model;
+    - Sidebar[] menuEntries = entries[categoryEntry];
+    - string sectionName = categoryEntry;
+    li(class="treeview")
+      a(href="#")
+        i(class="fa #{sectionIcon}")
+        span #{sectionName}
+        span(class="pull-right-container")
+          i(class="fa fa-angle-left pull-right")
+      ul(class="treeview-menu")
+        - foreach(entry; menuEntries)
+          li
+            a(href="#{entry.path}")
+              i(class="#{entry.icon}", aria-hidden="true")
+              | &nbsp; #{entry.displayName}

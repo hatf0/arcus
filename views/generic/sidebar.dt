@@ -1,0 +1,32 @@
+aside(class="main-sidebar")
+  section(class="sidebar")
+    ul(class="sidebar-menu", data-widget="tree") 
+      li.header
+        |!= "Select a VPS"
+      select.js-example-basic-multiple(name="vpses[]")
+        option(value="general")
+          | -
+        - foreach(i, server; user.servers)
+          - import std.typecons;
+          - import bap.models.vps;
+          - Nullable!VPS v = db.getVPS(server);
+          - if(!v.isNull)
+            option(value="#{server}")
+              | #{v.name}
+
+      | !{sidebarContents}
+      
+script
+  |!= "$(document).ready(function() {$('.js-example-basic-multiple').select2({width:'resolve'}); setInterval(function(){"
+  |!= "if($('.sidebar-mini').hasClass('sidebar-collapse')){"
+  |!= "$('.js-example-basic-multiple').next('.select2-container').hide();"
+  |!= "} else { $('.js-example-basic-multiple').next('.select2-container').show();"
+  |!= "}}, 50);"
+  |!= "console.log(window.location.pathname.replace(/^\\/([^\\/]*).*$/, '$1'));"
+  |!= "$('.js-example-basic-multiple').val(window.location.pathname.replace(/^\\/([^\\/]*).*$/, '$1'));"
+  |!= "$('.js-example-basic-multiple').trigger('change');" 
+  |!= "$('.js-example-basic-multiple').on('select2:select', function (e) {"
+  |!= "var data = e.params.data;"
+  |!= "window.location.href = '/' + data.id + '/dashboard';"
+  |!= "});});"
+

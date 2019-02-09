@@ -1,0 +1,36 @@
+head
+  |!= "<meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>"
+  |!= "<link rel='stylesheet' href='/static/bootstrap/bootstrap.min.css'>"
+  |!= "<link rel='stylesheet' href='/static/bootstrap/mdi.css'>"
+  |!= "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css'>"
+  |!= "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css'>"
+  |!= "<link rel='stylesheet' href='/static/adminlte/dist/css/AdminLTE.css'>"
+  |!= "<link rel='stylesheet' href='/static/adminlte/dist/css/skins/skin-black.css'>"
+  |!= "<link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css'>"
+  |!= "<link rel='stylesheet' type='text/css' href='/static/select2/select2.css'>"
+  |!= "<link rel='stylesheet' type='text/css' href='https://cdn.materialdesignicons.com/3.4.93/css/materialdesignicons.min.css'>"
+  script(src="/static/jquery/jquery-3.2.1.min.js")
+  script(src="/static/bootstrap/bootstrap.min.js")
+  script(src="/static/adminlte/dist/js/adminlte.min.js")
+  script(src="/static/select2/select2.js")
+  script(src="/static/adminlte_fix.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js")
+  script
+    |!= "// Create a closure"
+    |!= "(function(){"
+    |!= "// Your base, I'm in it!"
+    |!= "var originalAddClassMethod = jQuery.fn.addClass;"
+    |!= "jQuery.fn.addClass = function(){"
+    |!= "// Execute the original method."
+    |!= "var result = originalAddClassMethod.apply( this, arguments );"
+    |!= "// trigger a custom event"
+    |!= "jQuery(this).trigger('cssClassChanged');"
+    |!= "// return the original result"
+    |!= "return result;"
+    |!= "}"
+    |!= "})();"
+  script
+    |!= "//Enable tooltips everywhere.."
+    |!= "$(function () {$('[data-toggle=\"tooltip\"]').tooltip({container: 'body'})})"
+  title mixtape
+

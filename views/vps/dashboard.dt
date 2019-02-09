@@ -1,0 +1,20 @@
+doctype html
+html(lang="en")
+  include generic/header
+  include generic/sidebar
+  div.content-wrapper
+    - if(lastError == "ERR_NO_PERMS")
+      div#youArentAllowedInThere.alert.alert-error.alert-dismissible
+        |!= "You aren't allowed to access that page."
+      script
+        |!= "$('#youArentAllowedInThere').delay(3000).fadeOut();"
+    section.content-header
+      h1
+        |!= "Dashboard"
+        small
+          |!= "Overview of your VPS"
+    section.content
+      - if(templateName in widgets) 
+        - foreach(widget; widgets[templateName])
+          | !{ widget.render() }
+
