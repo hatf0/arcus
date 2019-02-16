@@ -1,6 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
+		"bap-library": "0.0.1",
 		"botan": "1.12.10",
 		"botan-math": "1.0.3",
 		"cachetools": "0.1.2",

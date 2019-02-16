@@ -13,8 +13,13 @@ html(lang="en")
         |!= "Dashboard"
         small
           |!= "Overview of your VPS"
-    section.content
-      - if(templateName in widgets) 
-        - foreach(widget; widgets[templateName])
-          | !{ widget.render() }
+    - import std.typecons;
+    - import bap.core.node;
+    - Nullable!Node _n = serverInterface.getDB().getNode(vps.node);
+    - if(!_n.isNull)
+      - Node node = _n; 
+      section.content(node="#{vps.node}", key="#{authKey}", vps="#{vps.uuid}", ws-url="ws://#{node.host}:#{node.port}/ws")
+        - if(templateName in serverInterface.getWidgets()) 
+          - foreach(widget; serverInterface.getWidgets()[templateName])
+            | !{ widget.render() }
 

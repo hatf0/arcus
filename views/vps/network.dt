@@ -9,7 +9,7 @@ html(lang="en")
         small
           | View network settings for your VPS
     section.content
-      - if(templateName in widgets) 
-        - foreach(widget; widgets[templateName])
+      - if(templateName in serverInterface.getWidgets()) 
+        - foreach(widget; serverInterface.getWidgets()[templateName])
           | !{ widget.render() }
 

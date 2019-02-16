@@ -1,20 +1,33 @@
 aside(class="main-sidebar")
   section(class="sidebar")
     ul(class="sidebar-menu", data-widget="tree") 
-      li.header
-        |!= "Select a VPS"
-      select.js-example-basic-multiple(name="vpses[]")
-        option(value="general")
-          | -
-        - foreach(i, server; user.servers)
-          - import std.typecons;
-          - import bap.models.vps;
-          - Nullable!VPS v = db.getVPS(server);
-          - if(!v.isNull)
-            option(value="#{server}")
-              | #{v.name}
+      - if(templateName[0..5] != "admin")
+        li.header
+          |!= "Select a VPS"
+        select.js-example-basic-multiple(name="vpses[]")
+          option(value="general")
+            | -
+          - foreach(i, server; user.servers)
+            - import std.typecons;
+            - import bap.models.vps;
+            - Nullable!VPS v = serverInterface.getDB().getVPS(server);
+            - if(!v.isNull)
+              option(value="#{server}")
+                | #{v.name}
 
       | !{sidebarContents}
+      - if(templateName[0..5] != "admin" && user.admin) 
+        li.header
+          |!= "Admin"
+        li
+          a(href="/admin/dashboard")
+            i(class="mdi mdi-toolbox", aria-hidden="true")
+            | &nbsp; Admin Dashboard
+      - else if(user.admin)
+        li
+          a(href="/general/dashboard")
+            i(class="mdi mdi-toolbox", aria-hidden="true")
+            | &nbsp; User Dashboard
       
 script
   |!= "$(document).ready(function() {$('.js-example-basic-multiple').select2({width:'resolve'}); setInterval(function(){"

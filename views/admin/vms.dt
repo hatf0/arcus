@@ -1,0 +1,53 @@
+doctype html
+html(lang="en")
+  include generic/header
+  include generic/sidebar
+  script
+    |!= "$(document).ready( function () {$('#vmList').DataTable({'paging': true, 'lengthChange': true, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true}).order([1, 'desc']);} );"
+  div.content-wrapper
+    section.content-header
+      h1 VMs
+        small Manage all VMs here..
+    section.content
+      div.row
+        div.col-md-12
+          div.box.box-primary
+            div.box-header.with-border
+              h3 All VMs
+            div.box-body
+              table#vmList.table.table-striped.table-bordered
+                thead
+                  tr
+                    th
+                      | Owner
+                    th
+                      | UUID
+                    th
+                      | Node
+                    th
+                      | Status
+                    th
+                      | Actions
+                tbody
+                  - foreach(vps; serverInterface.getDB().getAllVPS())
+                    tr
+                      td
+                        | #{vps.owner}
+                      td
+                        | #{vps.uuid}
+                      td
+                        | #{vps.node}
+                      td
+                        span.badge.bg-red.node-status(id="#{vps.uuid}-status") unknown
+                      td
+                        button.btn-default.btn(type="button")
+                          | Start
+                        button.btn-default.btn(type="button")
+                          | Restart
+                        button.btn-default.btn(type="button")
+                          | Stop
+                        button.btn-default.btn(type="button", data-toggle="modal", data-target="#modify-vm-modal")
+                          | Modify
+                        button.btn-danger.btn(type="button", data-toggle="modal", data-target="#delete-vm-modal")
+                          | Destroy
+

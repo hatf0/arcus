@@ -1,0 +1,92 @@
+doctype html
+html(lang="en")
+  include generic/header
+  include generic/sidebar
+  script(src="/static/chartjs_plugin.js")
+  script(src="/static/usage-graphs.js")
+  div.content-wrapper
+    section.content-header
+      h1 Dashboard
+        small Overview of everything
+    section.content
+      div.column
+        div.col-md-6
+          div.box.box-primary
+            div.box-header.with-border
+              h4 Total Network Throughput
+            div.box-body
+              canvas#networkUsage(style="height: 255px; width: 742px;", height="265", width="742")
+      div.row
+        script
+          | $(document).ready(function() { var online = 0; var servers = [
+          - foreach(i, _s; serverInterface.getDB().getAllNode())
+            - if(i != serverInterface.getDB().getAllNode().length - 1)
+              | 'http://#{_s.host}:#{_s.port}/ping',
+            - else
+              | 'http://#{_s.host}:#{_s.port}/ping'];
+          | servers.forEach(function(e) {
+          |     var r = new XMLHttpRequest();
+          |     r.open('POST', e, true);
+          |     r.responseType = "text";
+          |     r.timeout = 2000;
+          |     r.onload = function() {
+          |         if(r.readyState == r.DONE) {
+          |             if(r.status == 200) { 
+          |                 $("#nodesOnline").text(parseInt($("#nodesOnline").text()) + 1)
+          |             }
+          |         }
+          |     };
+          |     r.ontimeout = function() {
+          |         $("#nodesOffline").text(parseInt($("#nodesOffline").text()) + 1);
+          |     };
+          |     r.send(null);
+          |   });
+          | });
+        div.col-md-3
+          div.small-box.bg-green
+            div.inner
+              h3#nodesOnline 0
+              p Nodes Online
+            div.icon
+              i.mdi.mdi-server
+        div.col-md-3
+          div.small-box.bg-green
+            div.inner
+              h3 1
+              p Active User
+            div.icon
+              i.mdi.mdi-account
+        div.col-md-3
+          div.small-box.bg-red
+            div.inner
+              h3#nodesOffline 0
+              p Nodes Offline
+            div.icon
+              i.mdi.mdi-server-off
+        div.col-md-3
+          div.small-box.bg-red
+            div.inner
+              h3 0
+              p Disabled Users
+            div.icon
+              i.mdi.mdi-account-off
+        div.col-md-3
+          div.small-box.bg-aqua
+            div.inner
+              h3 19
+              p Allocated IP Addresses
+            div.icon
+              i.mdi.mdi-server-network
+        div.col-md-3
+          div.small-box.bg-aqua
+            div.inner
+              - int count = 0;
+              - foreach(_u; serverInterface.getDB().getAllUsers())
+                - count += _u.servers.length;
+              h3 #{count}
+              p Virtual Servers
+            div.icon
+              i.mdi.mdi-server
+      - if(templateName in serverInterface.getWidgets())
+        - foreach(widget; serverInterface.getWidgets()[templateName])
+          | !{widget.render()}

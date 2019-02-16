@@ -8,6 +8,11 @@ html(lang="en")
         |!= "You aren't allowed to access that page."
       script
         |!= "$('#youArentAllowedInThere').delay(3000).fadeOut();"
+    - else if(lastError != "ERR_SUCCESS")
+      div#genericError.alert.alert-error.alert-dismissible
+        | #{lastError}
+      script
+        |!= "$('#genericError').delay(3000).fadeOut();"
     section.content-header
       h1
         |!= "Dashboard"
@@ -18,7 +23,7 @@ html(lang="en")
       - import std.typecons;
       - VPS[] userVPS;
       - foreach(server; user.servers)
-        - Nullable!VPS v = db.getVPS(server);
+        - Nullable!VPS v = serverInterface.getDB().getVPS(server);
         - if(!v.isNull)
           - userVPS ~= v;
       div.row
@@ -91,6 +96,8 @@ html(lang="en")
                         - string state = to!string(server.state);
                         td
                           span.badge.bg-yellow #{state}
-      - if(templateName in widgets)
-        - foreach(widget; widgets[templateName])
+      - if(templateName in serverInterface.getWidgets())
+        - foreach(widget; serverInterface.getWidgets()[templateName])
           | !{ widget.render() }
+
+

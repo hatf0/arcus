@@ -9,12 +9,15 @@ head
   |!= "<link rel='stylesheet' type='text/css' href='https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css'>"
   |!= "<link rel='stylesheet' type='text/css' href='/static/select2/select2.css'>"
   |!= "<link rel='stylesheet' type='text/css' href='https://cdn.materialdesignicons.com/3.4.93/css/materialdesignicons.min.css'>"
+  |!= "<link rel='stylesheet' type='text/css' href='https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css'>"
   script(src="/static/jquery/jquery-3.2.1.min.js")
   script(src="/static/bootstrap/bootstrap.min.js")
   script(src="/static/adminlte/dist/js/adminlte.min.js")
   script(src="/static/select2/select2.js")
   script(src="/static/adminlte_fix.js")
   script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js")
+  script(src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js")
+  script(src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js")
   script
     |!= "// Create a closure"
     |!= "(function(){"

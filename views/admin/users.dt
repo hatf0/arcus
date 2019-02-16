@@ -1,0 +1,40 @@
+doctype html
+html(lang="en")
+  include generic/header
+  include generic/sidebar
+  script
+    |!= "$(document).ready( function () {$('#userTable').DataTable({'paging': true, 'lengthChange': true, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true});} );"
+  div.content-wrapper
+    section.content-header
+      h1 Users
+        small Manage users here..
+    section.content
+      div.row
+        div.col-md-12
+          div.box.box-primary
+            div.box-header.with-border
+              h3 All Users
+            div.box-body
+              table#userTable.table.table-striped.table-bordered
+                thead
+                  tr
+                    th
+                      | Username
+                    th
+                      | Email Address
+                    th
+                      | Last login date
+                    th
+                      | Action
+                tbody
+                  - foreach(dbUser; serverInterface.getDB().getAllUsers())
+                    tr
+                      td
+                        | #{dbUser.username}
+                      td
+                        | #{dbUser.email}
+                      td
+                        | #{dbUser.lastLoggedIn}
+                      td
+                        button.btn-default.btn(type="button", data-toggle="modal", data-target="#user-modify-modal")
+                          | Modify

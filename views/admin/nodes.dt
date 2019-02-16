@@ -1,0 +1,105 @@
+doctype html
+html(lang="en")
+  include generic/header
+  include generic/sidebar
+  script
+    | $(document).ready(function() { var online = 0; var servers = [
+    - foreach(i, _s; serverInterface.getDB().getAllNode())
+      - if(i != serverInterface.getDB().getAllNode().length - 1)
+        | 'http://#{_s.host}:#{_s.port}/ping',
+      - else
+        | 'http://#{_s.host}:#{_s.port}/ping'];
+      | servers.forEach(function(e, i) {
+      |     var r = new XMLHttpRequest();
+      |     r.open('POST', e, true);
+      |     r.responseType = "text";
+      |     r.timeout = 2000;
+      |     r.onload = function() {
+      |         if(r.readyState == r.DONE) {
+      |             if(r.status == 200) { 
+      |                 $(".node-status").select(i).removeClass("bg-red").addClass("bg-green").text("online");
+      |             }
+      |         }
+      |     };
+      |     r.ontimeout = function() {
+      |           $("##{_s.name}-target").text("offline");
+      |     };
+      |     r.send(null);
+      |   });
+      | });
+  script
+    |!= "$(document).ready( function () {$('#clusterNodes').DataTable({'paging': true, 'lengthChange': true, 'searching': true, 'ordering': true, 'info': false, 'autoWidth': true}); $('#initializeModal').on('hidden.bs.modal', function () { location.reload();});} );"
+  div.content-wrapper
+    section.content-header
+      h1 Nodes
+        small Overview of all host nodes
+    section.content
+      div.row
+        div.col-md-12
+          div.box.box-primary
+            div.box-header.with-border
+              h3 Cluster Nodes
+            div.box-body
+              table#clusterNodes.table.table-striped.table-bordered
+                thead
+                  tr
+                    th
+                      | Hostname
+                    th
+                      | IP Address
+                    th
+                      | Status
+                    th
+                      | Action
+                tbody
+                  - foreach(i, node; serverInterface.getDB().getAllNode())
+                    script
+                      | $(document).ready(function () {
+                      | $("##{node.name}-target").click(function() {
+                      |     var n = new XMLHttpRequest();
+                      |     n.open('POST', "/admin/node/#{node.name}/provision", true);
+                      |     $("#initializeModalBody").append('<p id="loadingText">Provisioning..</p><i class="mdi mdi-spin mdi-loading" id="loadingIcon"></i>');
+                      |     n.onload = function() {
+                      |         $("#loadingText").remove();
+                      |         $("#loadingIcon").remove();
+                      |         if(n.status == 200) {
+                      |             $("#initializeModalBody").append("<p>Done!</p>");      
+                      |         }
+                      |         else {
+                      |             $("#initializeModalBody").append("<p>An error occured.</p>");
+                      |         }
+                      |     };
+                      |     n.send(null);
+                      | });
+                      | });
+                    tr
+                      td
+                        | #{node.name}
+                      td.node-url
+                        | #{node.host}:#{node.port}
+                      td
+                        - if(!node.initialized)
+                          span.badge.bg-red.node-status(id="#{node.name}-status") uninitialized
+                        - else
+                          span.badge.bg-red.node-status(id="#{node.name}-status") unknown
+                      td
+                        - if(!node.initialized)
+                          button.btn-default.btn(data-toggle="modal", data-target="#initializeModal", id="#{node.name}-target")
+                            | Initialize
+                        a.btn-default.btn(href="http://#{node.host}:#{node.port}/ui/auth")
+                          | Connect
+      div#initializeModal.modal.fade
+        div.modal-dialog
+          div.modal-content
+            div.modal-header
+              button.close(type="button", data-dismiss="modal")
+                span
+                  | ×
+              h4.modal-title
+                | Provisioning
+            div#initializeModalBody.modal-body
+            div.modal-footer
+              button.btn.btn-primary(type="button", data-dismiss="modal", data-target="#initializeModal")
+                | Close
+
+
