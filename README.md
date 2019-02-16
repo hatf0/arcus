@@ -1,8 +1,5 @@
 # beautiful-admin-panel
-This is a utility I use to manage my several services. It's not meant to be used by you.
-However, I'll still provide installation instructions..
+This is informally called "beautiful-admin-panel". It is meant to be a competitor towards solutions such as Virtualizor, which have horrible UI/UX designs.
 
-## Compilation/install instructions..
-1. ```sudo pacman -Syu mongodb dmd dub```
-2. ```sudo systemctl enable mongodb && sudo systemctl start mongodb```
-3. ```cd beautiful-admin-panel/ && dub```
+## Compilation instructions
+I use a literal metric-fuckton of patched libraries. No compilation instructions, sadly.
