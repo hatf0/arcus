@@ -3,7 +3,7 @@ html(lang="en")
   include generic/header
   include generic/sidebar
   script
-    |!= "$(document).ready( function () {$('#vmList').DataTable({'paging': true, 'lengthChange': true, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true}).order([1, 'desc']);} );"
+    |!= "$(document).ready( function () {$('#vmList').DataTable({'paging': true, 'lengthChange': false, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true}).order([1, 'desc']);} );"
   div.content-wrapper
     section.content-header
       h1 VMs
@@ -13,7 +13,8 @@ html(lang="en")
         div.col-md-12
           div.box.box-primary
             div.box-header.with-border
-              h3 All VMs
+              button.btn-success.btn.pull-right(type="button", data-toggle="modal", data-target="#createVMModal")
+                | Create VM
             div.box-body
               table#vmList.table.table-striped.table-bordered
                 thead
@@ -51,3 +52,18 @@ html(lang="en")
                         button.btn-danger.btn(type="button", data-toggle="modal", data-target="#delete-vm-modal")
                           | Destroy
 
+      div#createVMModal.modal.fade
+        div.modal-dialog
+          div.modal-content
+            div.modal-header
+              button.close(type="button", data-dismiss="modal")
+                span
+                  | ×
+              h4.modal-title
+                | Create a VM
+            div#createVMModalBody.modal-body
+            div.modal-footer
+              button.btn.btn-primary.pull-left(type="button", data-dismiss="modal")
+                | Close
+              button.btn.btn-success(type="button")
+                | Create

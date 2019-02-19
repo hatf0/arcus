@@ -9,7 +9,26 @@ html(lang="en")
         small
           | Disks for your VPS
     section.content
-      - if(templateName in serverInterface.getWidgets()) 
-        - foreach(widget; serverInterface.getWidgets()[templateName])
-          | !{ widget.render() }
+      div.col-md-6
+        div.box.box-primary
+          div.box-header
+            h3 Drives
+          div.box-body
+            table.table.table-striped.table-bordered
+              tbody
+                tr
+                  th
+                    | Drive ID
+                  th 
+                    | Status
+                - foreach(drive; vps.drives)
+                  tr
+                    td
+                      | #{drive.driveID}
+                    td
+                      - if(drive.isReadOnly)
+                        span.badge.bg-red ro
+                      - if(drive.isRootDevice)
+                        span.badge.bg-yellow root
+
 

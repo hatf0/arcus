@@ -1,5 +1,7 @@
 doctype html
 html(lang="en")
+  link(href="/static/jsoneditor/dist/jsoneditor.min.css", rel="stylesheet", type="text/css")
+  script(src="/static/jsoneditor/dist/jsoneditor.min.js")
   include generic/header
   include generic/sidebar
   div.content-wrapper
@@ -9,7 +11,40 @@ html(lang="en")
         small
           | Advanced settings for your VPS
     section.content
-      - if(templateName in serverInterface.getWidgets()) 
-        - foreach(widget; serverInterface.getWidgets()[templateName])
-          | !{ widget.render() }
-
+      div.row
+        div.col-md-6
+          div.box.box-primary
+            div.box-header.with-border
+              h3 Boot Settings
+            form(enctype="multipart/form-data", method="post")
+              div.box-body
+                div.form-group
+                  h4
+                    | Kernel command-line arguments
+                  input#bootArgs.form-control(type="text", value="#{vps.boot.bootArgs}")
+                  h4
+                    | vmlinux binary
+                  input#vmlinux(type="file")
+        div.col-md-6
+          div.box.box-primary
+            div.box-header.with-border
+              h3 MMDS
+            div.box-body
+              div#jsonEditor(style="width: 790px; height: 400px")
+              script
+                |!= "// create the editor"
+                |!= "var container = document.getElementById('jsonEditor');"
+                |!= "var options = {};"
+                |!= "var editor = new JSONEditor(container, options);"
+                |!= "// set json"
+                |!= "var json = {"
+                |!= "'Array': [1, 2, 3],"
+                |!= "'Boolean': true,"
+                |!= "'Null': null,"
+                |!= "'Number': 123,"
+                |!= "'Object': {'a': 'b', 'c': 'd'},"
+                |!= "'String': 'Hello World'"
+                |!= "};"
+                |!= "editor.set(json);"
+                |!= "// get json"
+                |!= "var json = editor.get();"

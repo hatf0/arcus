@@ -3,7 +3,7 @@ html(lang="en")
   include generic/header
   include generic/sidebar
   script
-    |!= "$(document).ready( function () {$('#userTable').DataTable({'paging': true, 'lengthChange': true, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true});} );"
+    |!= "$(document).ready( function () {$('#userTable').DataTable({'paging': true, 'lengthChange': false, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true});} );"
   div.content-wrapper
     section.content-header
       h1 Users
@@ -13,7 +13,8 @@ html(lang="en")
         div.col-md-12
           div.box.box-primary
             div.box-header.with-border
-              h3 All Users
+              button.btn-success.btn.pull-right(type="button", data-toggle="modal", data-target="#createUserModal")
+                | Create User
             div.box-body
               table#userTable.table.table-striped.table-bordered
                 thead
@@ -27,6 +28,8 @@ html(lang="en")
                     th
                       | Action
                 tbody
+                  - import std.stdio, core.exception;
+                  - try {
                   - foreach(dbUser; serverInterface.getDB().getAllUsers())
                     tr
                       td
@@ -38,3 +41,22 @@ html(lang="en")
                       td
                         button.btn-default.btn(type="button", data-toggle="modal", data-target="#user-modify-modal")
                           | Modify
+                        button.btn-danger.btn(type="button", data-toggle="modal", data-target="#confirm-user-delete")
+                          | Delete
+                  - } catch(Exception e) { writeln("FUCK"); }
+
+      div#createUserModal.modal.fade
+        div.modal-dialog
+          div.modal-content
+            div.modal-header
+              button.close(type="button", data-dismiss="modal")
+                span
+                  | ×
+              h4.modal-title
+                | Create a User
+            div#createUserModalBody.modal-body
+            div.modal-footer
+              button.btn.btn-primary.pull-left(type="button", data-dismiss="modal")
+                | Close
+              button.btn.btn-success(type="button")
+                | Create

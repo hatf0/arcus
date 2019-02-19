@@ -19,11 +19,14 @@ html(lang="en")
       div.row
         script
           | $(document).ready(function() { var online = 0; var servers = [
-          - foreach(i, _s; serverInterface.getDB().getAllNode())
-            - if(i != serverInterface.getDB().getAllNode().length - 1)
-              | 'http://#{_s.host}:#{_s.port}/ping',
-            - else
-              | 'http://#{_s.host}:#{_s.port}/ping'];
+          - if(serverInterface.getDB().getAllNode().length == 0) 
+            | ];
+          - else 
+            - foreach(i, _s; serverInterface.getDB().getAllNode())
+              - if(i != serverInterface.getDB().getAllNode().length - 1)
+                | 'http://#{_s.host}:#{_s.port}/ping',
+              - else
+                | 'http://#{_s.host}:#{_s.port}/ping'];
           | servers.forEach(function(e) {
           |     var r = new XMLHttpRequest();
           |     r.open('POST', e, true);
@@ -80,13 +83,10 @@ html(lang="en")
         div.col-md-3
           div.small-box.bg-aqua
             div.inner
-              - int count = 0;
-              - foreach(_u; serverInterface.getDB().getAllUsers())
-                - count += _u.servers.length;
-              h3 #{count}
-              p Virtual Servers
+              h3 1
+              p Admins
             div.icon
-              i.mdi.mdi-server
+              i.mdi.mdi-account
       - if(templateName in serverInterface.getWidgets())
         - foreach(widget; serverInterface.getWidgets()[templateName])
           | !{widget.render()}

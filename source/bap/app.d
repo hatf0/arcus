@@ -39,12 +39,12 @@ void main() {
                     </div>
                 </div>`, "", "")); 
 
-    s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white, Widget.colors.aqua, `
+    s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white, Widget.colors.yellow, `
                 <span class="info-box-text">Status</span>
-                <span class="info-box-number" id="info-widget-text">ONLINE</span>`, "fa fa-power-off", "info-widget"));
+                <span class="info-box-number" id="info-widget-text">UNKNOWN</span>`, "fa fa-power-off", "info-widget"));
     s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white, Widget.colors.aqua, `
                 <span class="info-box-text">IP Address</span>
-                <span class="info-box-number" id="info-widget-text">172.16.1.1</span>`, "mdi mdi-server-network", "info-widget-2"));
+                <span class="info-box-number" id="ip-address">172.16.1.1</span>`, "mdi mdi-server-network", "info-widget-2"));
 
     s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white, Widget.colors.aqua, `
           <div class="box box-primary">     
@@ -90,6 +90,9 @@ void main() {
                     </div>
                     <script src="/static/vm-graphing.js"></script>
                 </div>`, "", "")); 
+    Sidebar[] adminVMs;
+    adminVMs ~= Sidebar("mdi mdi-server", "/admin/vms", "Overview");
+    s.registerSidebar("Admin", "Servers", "fa-server", adminVMs);
 
     Sidebar[] adminNodes;
     adminNodes ~= Sidebar("mdi mdi-server", "/admin/nodes", "Overview");
@@ -99,5 +102,6 @@ void main() {
     adminUsers ~= Sidebar("mdi mdi-account-settings", "/admin/users", "Overview");
     s.registerSidebar("Admin", "Users", "fa-users", adminUsers);
 
+    
     runApplication();
 }

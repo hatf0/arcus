@@ -32,6 +32,7 @@ $(document).ready(function() {
                      message('<div class="direct-chat-text">Tick!');
                  }
                  else if(e.event == "eval") {
+                     console.log(e.data);
                      eval(e.data);
                  }
                  else if(e.event == "hello") {

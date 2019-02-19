@@ -118,9 +118,15 @@ class BAPServer : Server {
               if(templateName[0..5] == "admin") {
                 sidebarContents = generateSidebars(["General", "Admin"]);
               }
+              else if(templateName == "dashboard.dt") {
+                  sidebarContents = generateSidebars(["General", "Resources"]);
+              }
               else {
                 sidebarContents = generateSidebars(["Management", "Resources"]);
               }
+            }
+            else if(templateName == "dashboard.dt") {
+                sidebarContents = generateSidebars(["General", "Resources"]);
             }
             else {
               sidebarContents = generateSidebars(["Management", "Resources"]);
@@ -129,8 +135,6 @@ class BAPServer : Server {
             Server serverInterface = this;
             switch(templateName) {
               case "dashboard.dt":
-                string[] sidebars = ["General", "Resources"];
-                sidebarContents = generateSidebars(sidebars);
                 res.render!("dashboard.dt", user, lastError, sidebarContents, serverInterface, templateName);
                 break;
               case "vps/dashboard.dt":
@@ -295,6 +299,13 @@ class BAPServer : Server {
                   logError("error while attempting to communicate with node");
                 }
               }
+              else if(req.params["action"] == "destroy") {
+                  foreach(vps; node.deployedVPS) {
+                      db.deleteVPS(vps);
+                  }
+                  db.deleteNode(req.params["target"]);
+                  res.writeBody("OK", 200);
+              }
               else {
                 logInfo("got action: " ~ req.params["action"]);
               }
@@ -316,9 +327,6 @@ class BAPServer : Server {
               res.redirect("/");
               return;
             }
-
-
-
         }
 
         void registerInternalPages() {
@@ -384,7 +392,7 @@ class BAPServer : Server {
         registerInternalPages();
 
 
-        redis_host = "127.0.0.1";
+        redis_host = "192.168.1.17";
         redis_port = 6379;
         redis_password = "";
         db = new RedisDatabaseDriver("127.0.0.1", 6379);

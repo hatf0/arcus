@@ -14,7 +14,7 @@ $(function() {
 
     console.log(new_labels);
 
-    new Chart(ctx, {
+    window.cpuUsageGraph = new Chart(ctx, {
       type: 'line',
       data: {
         labels: new_labels,
@@ -43,7 +43,7 @@ $(function() {
       }
     });
 
-    new Chart(ctx_2, {
+    window.networkActivityGraph = new Chart(ctx_2, {
       type: 'line',
       data: {
         labels: new_labels,
