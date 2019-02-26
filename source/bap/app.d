@@ -6,10 +6,6 @@ import bap.core.server;
 import bap.server;
 
 void main() {
-    import etc.linux.memoryerror;
-    static if (is(typeof(registerMemoryErrorHandler)))
-        registerMemoryErrorHandler();
-
     Server s = new BAPServer();
 
     Sidebar[] entries;

@@ -2,8 +2,6 @@ doctype html
 html(lang="en")
   include generic/header
   include generic/sidebar
-  script(src="/static/chartjs_plugin.js")
-  script(src="/static/usage-graphs.js")
   div.content-wrapper
     section.content-header
       h1 Dashboard
@@ -15,7 +13,7 @@ html(lang="en")
             div.box-header.with-border
               h4 Total Network Throughput
             div.box-body
-              canvas#networkUsage(style="height: 255px; width: 742px;", height="265", width="742")
+              iframe(src="http://localhost:3000/d-solo/Xqk51Prmz/traffic?orgId=1&panelId=4", style="height: 260px; width: 100%;", frameborder="0")
       div.row
         script
           | $(document).ready(function() { var online = 0; var servers = [
@@ -55,8 +53,9 @@ html(lang="en")
         div.col-md-3
           div.small-box.bg-green
             div.inner
-              h3 1
-              p Active User
+              h3 
+                | #{serverInterface.getDB().getAllUsers().length} 
+              p Active Users
             div.icon
               i.mdi.mdi-account
         div.col-md-3
@@ -76,10 +75,11 @@ html(lang="en")
         div.col-md-3
           div.small-box.bg-aqua
             div.inner
-              h3 19
-              p Allocated IP Addresses
+              h3 
+                | #{serverInterface.getDB().getAllVPS().length}
+              p Servers
             div.icon
-              i.mdi.mdi-server-network
+              i.mdi.mdi-server
         div.col-md-3
           div.small-box.bg-aqua
             div.inner

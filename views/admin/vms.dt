@@ -4,6 +4,19 @@ html(lang="en")
   include generic/sidebar
   script
     |!= "$(document).ready( function () {$('#vmList').DataTable({'paging': true, 'lengthChange': false, 'searching': true, 'ordering': false, 'info': false, 'autoWidth': true}).order([1, 'desc']);} );"
+  script
+    |!= "$(document).ready(function() {$('.js-example-basic-multiple-node').select2({width:'resolve'});});"
+  script
+    | $(document).ready(function () {
+    |       $("#vpsInfo").ajaxForm({url: "/admin/vps/provision", type: 'post', success: function(data) { if(data == "OK") { document.location.reload(); } else { $.notify({message:data},{type: 'danger', z_index: 9999});}}, beforeSubmit: function() { 
+    |        $.notify({
+    |          // options
+    |          message: 'Submitting form for verification..' 
+    |        },{
+    |          // settings
+    |          type: 'success',
+    |          z_index: 9999
+    |        }); return true;}});});
   div.content-wrapper
     section.content-header
       h1 VMs
@@ -61,9 +74,43 @@ html(lang="en")
                   | ×
               h4.modal-title
                 | Create a VM
-            div#createVMModalBody.modal-body
-            div.modal-footer
-              button.btn.btn-primary.pull-left(type="button", data-dismiss="modal")
-                | Close
-              button.btn.btn-success(type="button")
-                | Create
+            form#vpsInfo(role="form")
+              div#createVMModalBody.modal-body
+                div.form-group
+                  label
+                    | Select a node
+                  select.js-example-basic-multiple-node(name="node")
+                    - foreach(node; serverInterface.getDB().getAllNode())
+                      option(value="#{node.name}")
+                        | #{node.name}
+                div.form-group
+                  label
+                    | Hostname
+                  input#hostnameInput.form-control(type="text", placeholder="Enter hostname", name="hostname")
+                div.form-group
+                  label
+                    | vCPUs
+                  input#vCPUCount.form-control(type="number", placeholder="Enter count of vCPUs", name="vcpu_count", min="1", max="999")
+                  label
+                    | RAM (MiB)
+                  input#ramSize.form-control(type="number", placeholder="Enter size of RAM (MiB)", name="ram_size", min="1", max="9999999")
+                div.form-group
+                  label
+                    | Disk Size
+                  input#diskSize.form-control(type="number", placeholder="Enter disk size in GB", name="disk_size", min="1", max="500")
+                  label
+                    | OS Template
+                  select.js-example-basic-multiple-node(name="os_template")
+                    option(value="ubuntu-1804")
+                      | Ubuntu 18.04 Server
+                div.form-group
+                  label
+                    | User
+                  select.js-example-basic-multiple-node(name="user")
+                    - foreach(_user; serverInterface.getDB().getAllUsers())
+                      option(value="#{_user.username}")
+                        | #{_user.username}
+              div.modal-footer
+                button.btn.btn-primary.pull-left(type="button", data-dismiss="modal")
+                  | Close
+                input#createVM.btn.btn-success(type="submit", value="Create")

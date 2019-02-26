@@ -12,6 +12,7 @@ head
   |!= "<link rel='stylesheet' type='text/css' href='https://cdn.materialdesignicons.com/3.4.93/css/materialdesignicons.min.css'>"
   |!= "<link rel='stylesheet' type='text/css' href='https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css'>"
   script(src="/static/jquery/jquery-3.2.1.min.js")
+  script(src="https://malsup.github.io/jquery.form.js")
   script(src="/static/bootstrap/bootstrap.min.js")
   script(src="/static/adminlte/dist/js/adminlte.min.js")
   script(src="/static/select2/select2.js")

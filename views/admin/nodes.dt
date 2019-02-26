@@ -3,6 +3,11 @@ html(lang="en")
   include generic/header
   include generic/sidebar
   script
+    | $(document).ready(function() {
+    |     $("#nodeInfo").ajaxForm({url: "/admin/node/create", type: 'post', success: function(data) { if(data == "OK") { document.location.reload(); }}});
+    | });
+
+  script
     | $(document).ready(function() { var online = 0; var servers = [
     - foreach(i, _s; serverInterface.getDB().getAllNode())
       - if(i == serverInterface.getDB().getAllNode().length - 1)
@@ -77,6 +82,7 @@ html(lang="en")
                       | window.k.onload = function() {
                       |     if(window.k.status == 200) {
                       |         $("#areYouSureModalBody").append("<p>Done.</p>");
+                      |         document.location.reload();
                       |     }
                       |     else {
                       |         $("#areYouSureModalBody").append("<p>Error occured.</p>");
@@ -143,11 +149,23 @@ html(lang="en")
                   | ×
               h4.modal-title
                 | Create a Node
-            div#createNodeModalBody.modal-body
-            div.modal-footer
-              button.btn.btn-primary.pull-left(type="button", data-dismiss="modal", data-target="#createNodeModal")
-                | Close
-              button.btn.btn-success(type="button")
-                | Create
+            form#nodeInfo(role="form")
+              div#createNodeModalBody.modal-body
+                div.form-group
+                  label(for="#hostnameInput")
+                    | Hostname
+                  input#hostnameInput.form-control(type="text", placeholder="Enter hostname", name="hostname")
+                div.form-group
+                  label(for="#ipAddressInput")
+                    | IP Address
+                  input#ipAddressInput.form-control(type="text", placeholder="Enter IP Address/URL", name="ip")
+                div.form-group
+                  label(for="#portInput")
+                    | Port
+                  input#portInput.form-control(type="text", value="1337", name="port")
+              div.modal-footer
+                button.btn.btn-primary.pull-left(type="button", data-dismiss="modal", data-target="#createNodeModal")
+                  | Close
+                input#createNode.btn.btn-success(type="submit", value="Create")
 
 
