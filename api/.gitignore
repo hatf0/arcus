@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/bap_api
+bap_api.so
+bap_api.dylib
+bap_api.dll
+bap_api.a
+bap_api.lib
+bap_api-test-*
+*.exe
+*.o
+*.obj
+*.lst
