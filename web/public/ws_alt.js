@@ -18,14 +18,16 @@ $(document).ready(function() {
               socket.onmessage = function(msg){
                  var e = JSON.parse(msg.data);
                  if(e.event == "update") {
-                     if(typeof(e.class) != "undefined") {
+                     if(typeof(e.class) != "undefined" && e.class != null) {
 //             	        message('<div class="direct-chat-text">Updating class to: ' + e.class);
-                        $('#' + e.id).removeClass();
-                        $('#' + e.id).addClass(e.class);
+                            $('#' + e.id).removeClass();
+                            $('#' + e.id).addClass(e.class);
                      }
-                     else if(typeof(e.text) != "undefined") {
+                     else if(typeof(e.text) != "undefined" && e.text != null) {
   //           	        message('<div class="direct-chat-text">Updating text to: ' + e.text);
-                         $('#' + e.id).text(e.text);
+                         if($("#" + e.id).text() != e.text) {
+                             $('#' + e.id).text(e.text);
+                         }
                      }
                  }
                  else if(e.event == "tick") {

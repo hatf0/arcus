@@ -22,12 +22,14 @@ aside(class="main-sidebar")
         li
           a(href="/admin/dashboard")
             i(class="mdi mdi-toolbox", aria-hidden="true")
-            | &nbsp; Admin Dashboard
+            span
+              | &nbsp;Admin Dashboard
       - else if(user.admin)
         li
           a(href="/general/dashboard")
             i(class="mdi mdi-toolbox", aria-hidden="true")
-            | &nbsp; User Dashboard
+            span
+              | &nbsp;User Dashboard
       
 script
   |!= "$(document).ready(function() {$('.js-example-basic-multiple').select2({width:'resolve'}); setInterval(function(){"

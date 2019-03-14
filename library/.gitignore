@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+libbap-library.a
+vps_library.so
+vps_library.dylib
+vps_library.dll
+vps_library.a
+vps_library.lib
+vps_library-test-*
+*.exe
+*.o
+*.obj
+*.lst

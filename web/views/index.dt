@@ -14,9 +14,9 @@ html(lang="en")
         |!= "$('#loginAlert').delay(3000).fadeOut();"
     div(class="login-box")
       div(class="login-logo")
-        |!= "<b>hatf0</b>Admin"
+        img(src="/static/branding/logo_blue.svg", width="200", height="50")
       div(class="login-box-body")
-        p(class="login-box-msg")
+        h3(class="login-box-msg")
           |!= "Sign In"
         form(action="/login", method="post")
           div(class="form-group has-feedback")

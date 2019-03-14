@@ -88,15 +88,25 @@ void main() {
                 </div>`, "", "")); 
     Sidebar[] adminVMs;
     adminVMs ~= Sidebar("mdi mdi-server", "/admin/vms", "Overview");
-    s.registerSidebar("Admin", "Servers", "fa-server", adminVMs);
+    s.registerSidebar("Admin", "VPS", "fa-server", adminVMs);
 
     Sidebar[] adminNodes;
     adminNodes ~= Sidebar("mdi mdi-server", "/admin/nodes", "Overview");
-    s.registerSidebar("Admin", "Nodes", "fa-server", adminNodes); 
+    s.registerSidebar("Admin", "Node", "fa-server", adminNodes); 
 
     Sidebar[] adminUsers;
     adminUsers ~= Sidebar("mdi mdi-account-settings", "/admin/users", "Overview");
-    s.registerSidebar("Admin", "Users", "fa-users", adminUsers);
+    s.registerSidebar("Admin", "User", "fa-users", adminUsers);
+
+    Sidebar[] adminConfig;
+    adminConfig ~= Sidebar("mdi mdi-database", "/admin/config/redis", "Redis");
+    adminConfig ~= Sidebar("mdi mdi-database", "/admin/config/influxdb", "InfluxDB");
+    adminConfig ~= Sidebar("mdi mdi-chart-line", "/admin/config/grafana", "Grafana");
+    adminConfig ~= Sidebar("mdi mdi-server", "/admin/config/orchestrator", "Orchestrator");
+    adminConfig ~= Sidebar("mdi mdi-monitor", "/admin/config/bap", "Panel");
+
+    s.registerSidebar("Admin", "Settings", "fa-cogs", adminConfig);
+
 
     
     runApplication();

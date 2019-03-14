@@ -1,0 +1,40 @@
+doctype html
+html(lang="en")
+  include generic/header
+  include generic/sidebar
+  script
+    |!= "$(document).ready(function() {$('.js-example-basic-multiple-vps').select2({width:'resolve'});});"
+  script
+    | $(document).ready(function () {
+    |       $("#rebuildInfo").ajaxForm({url: "./rebuild", type: 'post', success: function(data) { if(data == "OK") { document.location.reload(); } else { $.notify({message:data},{type: 'danger', z_index: 9999});}}, beforeSubmit: function() { 
+    |        $.notify({
+    |          // options
+    |          message: 'Starting VM rebuild process..' 
+    |        },{
+    |          // settings
+    |          type: 'success',
+    |          z_index: 9999
+    |        }); return true;}});});
+  div.content-wrapper
+    section.content-header
+      h1
+        | Redeploy
+        small
+          | Restore it to a clean, well-known state.
+    section.content
+      div.col-md-6
+        div.box.box-primary
+          div.box-header
+            h3 WARNING
+            small This will irreversably wipe your VM. There is no going back.
+          form#rebuildInfo
+            div.box-body
+              div.form-group
+                label OS Template
+                select.js-example-basic-multiple-vps(name="template")
+                  option(value="ubuntu-1804")
+                    | Ubuntu
+            div.box-footer
+              input#createVM.pull-right.btn.btn-success(type="submit", value="Redeploy")
+
+

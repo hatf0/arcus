@@ -385,12 +385,12 @@ class BAPServer : Server {
                 string securePassword = randomToken(144);
                 datum.communication_key = securePassword;
                 node.communicationKey = securePassword;
-                db.insertNode(node); 
 
                 try {
                   auto cl = new RestInterfaceClient!NodeREST(url);
                   if(cl.postOnboard(datum) == "OK") {
                     res.writeBody("OK", 200);
+                    db.insertNode(node); 
                   }
                   else {
                     res.writeBody("FAIL", 400);
@@ -404,6 +404,13 @@ class BAPServer : Server {
                   foreach(vps; node.deployedVPS) {
                       db.deleteVPS(vps);
                   }
+
+                  foreach(vps; db.getAllVPS()) {
+                    if(vps.node == node.name) {
+                      db.deleteVPS(vps.uuid);
+                    }
+                  }
+
                   db.deleteNode(req.params["target"]);
                   res.writeBody("OK", 200);
               }
@@ -610,16 +617,16 @@ class BAPServer : Server {
         httpSettings = new HTTPServerSettings;
         fileSettings = new HTTPFileServerSettings;
         httpSettings.port = 8080;
-        httpSettings.sessionStore = new RedisSessionStore("127.0.0.1", 5, 6379);
-        httpSettings.bindAddresses = ["0.0.0.0"];
+        httpSettings.sessionStore = new RedisSessionStore("watsky.0xcc.pw", 5, 6379);
+        httpSettings.bindAddresses = ["::1", "0.0.0.0"];
         fileSettings.serverPathPrefix = "/static";
         registerInternalPages();
 
 
-        redis_host = "192.168.1.17";
+        redis_host = "watsky.0xcc.pw";
         redis_port = 6379;
         redis_password = "";
-        db = new RedisDatabaseDriver("127.0.0.1", 6379);
+        db = new RedisDatabaseDriver("watsky.0xcc.pw", 6379);
         listener = listenHTTP(httpSettings, router);
     }
 

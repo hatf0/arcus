@@ -4,9 +4,9 @@ body(class="hold-transition skin-black sidebar-mini")
   header(class="main-header")
     a(href="/general/dashboard", class="logo")
       span(class="logo-mini")
-        |!= "<b>h</b>VM"
+        img(src="/static/branding/mark_blue.svg", width="50", height="35")
       span(class="logo-lg")
-        |!= "<b>hatf0</b>VM"
+        img(src="/static/branding/logo_blue.svg", width="200", height="50")
     nav(class="navbar navbar-static-top", role="navigation")
       a(href="#", class="sidebar-toggle", data-toggle="push-menu", role="button")
         span(class="sr-only")

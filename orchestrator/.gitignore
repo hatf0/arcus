@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+orchestrator
+config.json
+orchestrator.so
+orchestrator.dylib
+orchestrator.dll
+orchestrator.a
+orchestrator.lib
+orchestrator-test-*
+*.exe
+*.o
+*.obj
+*.lst

@@ -1,14 +1,41 @@
 name "beautiful-admin-panel"
-description "A minimal D application."
+description "Functional full-stack admin panel."
+homepage "https://www.0xcc.pw"
+
+license "MIT"
+copyright "Copyright © 2018-2018 @hatf0"
 authors "hatf0"
-copyright "Copyright © 2017, hatf0"
-license "proprietary"
-mainSourceFile "source/bap/app.d"
-targetType "executable"
-dependency "bap-library" version="~>0.0.1"
+
+subPackage "library" 
+
+targetPath "./bin"
+
 dependency "vibe-d" version="~>0.8.4"
 dependency "vibe-d:tls" version="*"
 subConfiguration "vibe-d:tls" "notls"
-dependency "firecracker_d" version="~>0.0.6"
-dependency "jsonizer" version="~>0.7.6"
+dependency "firecracker_d" version="~>1.0.0"
+dependency "asdf" version="~>0.4.5"
 dependency "dauth" version="~>0.6.3"
+dependency "library" version="*"
+dependency "jsonizer" version="~>0.7.6"
+dependency "requests" version="~>1.0.5-fixssl"
+
+configuration "orchestrator" {
+    targetType "executable"
+    targetName "orchestrator"
+    sourcePaths "orchestrator"
+    dependency "hasdata" version="~>1.1.0"
+}
+
+configuration "web" {
+    targetType "executable"
+    targetName "web"
+    sourcePaths "web"
+    stringImportPaths "web/views"
+}
+
+configuration "api" {
+    targetType "executable"
+    targetName "api"
+    sourcePaths "api"
+}
