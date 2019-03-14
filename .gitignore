@@ -1,1 +1,8 @@
 beautiful-admin-panel
+bin/
+dub.selections.json
+.dub
+*.o
+*.obj
+*.exe
+*.a
