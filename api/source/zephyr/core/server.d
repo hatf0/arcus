@@ -439,55 +439,6 @@ class ZephyrServer {
                 return _eventGrabber;
             }
 
-            auto _v = _db.getVPS(_target);
-            if(_v.isNull) {
-                return "NO_EXIST";
-            }
-
-            import bap.models.vps;
-            VPS v = _v;
-
-            if(_action == "start") {
-                logInfo("got %s action", _action);
-                return "OK";
-            } 
-            else if(_action == "shutdown") {
-                logInfo("got %s action", _action);
-                return "OK";
-
-            }
-            else if(_action == "stop") {
-                logInfo("got %s action", _action);
-                return "OK";
-
-            }
-            else if(_action == "reboot") {
-                logInfo("got %s action", _action);
-                return "OK";
-
-            } 
-            else if(_action == "redeploy") {
-                logInfo("got %s action", _action);
-
-                mixin GrabEvent!(VPSTarget);
-
-                if(_eventGrabber == "no") { 
-                    return _eventGrabber;
-                }
-                return "OK";
-            }
-            else if(_action == "destroy") {
-                if(_db.deleteVPS(_target)) {
-                    return "OK";
-                }
-                else {
-                    return "FAIL";
-                }
-            }
-            else if(_action == "mmds") {
-
-            }
-
             return "UNIMPLEMENTED";
 
         }

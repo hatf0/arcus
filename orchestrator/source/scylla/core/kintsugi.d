@@ -142,6 +142,11 @@ class Kintsugi {
         }
         else {
             
+            if(server.state == VPS.State.provisioned) {
+                writefln("VPS %s WAS IN A BAD STATE", server.uuid);
+                return;
+            }
+
             writeln("creating new firecracker instance");
 
             FirecrackerVM fcVM = new FirecrackerVM(server.uuid);
@@ -268,6 +273,15 @@ class Kintsugi {
         if(vmAlive(uuid)) {
             FirecrackerVM vm = servers[uuid];
             vm.reboot();
+            return true;
+        }
+        return false;
+    }
+
+    bool halt(string uuid) {
+        if(vmAlive(uuid)) {
+            FirecrackerVM vm = servers[uuid];
+            vm.stop();
             return true;
         }
         return false;

@@ -57,7 +57,8 @@ class BAPServer : Server {
         }
 
 
-        /* This is the ugliest function in the world. I WOULD REALLY REALLY LIKE TO PORT THE MAJORITY OF THE LOGIC
+        /* 
+           This is the ugliest function in the world. I WOULD REALLY REALLY LIKE TO PORT THE MAJORITY OF THE LOGIC
            ELSEWHERE BUT FUCK IT
         */
 

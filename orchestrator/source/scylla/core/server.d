@@ -32,6 +32,13 @@ class ScyllaServer {
         @serializationKeys("class") string widgetClass;
         @serializationKeys("text") string widgetText;
     }
+    struct AuthInfo {
+        @serializationKeys("user")
+        string user;
+
+        @serializationKeys("scope")
+        string[] scopes;
+    }
 
     bool hasAccess(string comm_key, string uuid) {
             if(comm_key == serverConfig.communicationKey) {
@@ -39,14 +46,82 @@ class ScyllaServer {
             }
 
             if(keyStore.exists(comm_key)) {
-                string targetUUID = keyStore.get!string(comm_key);
-                logInfo("got target uuid: " ~ targetUUID ~ ", comparing to uuid: " ~ uuid);
-                if(targetUUID == uuid) {
-                    return true;
+                string keyJSON = keyStore.get!string(comm_key);
+                try {
+                    AuthInfo t = keyJSON.deserialize!AuthInfo();
+                    foreach(_scope; t.scopes) {
+                        if(_scope == "vps." ~ uuid) {
+                            return true;
+                        }
+                    }
+                } catch(Exception e) {
+                    return false;
                 }
                 return false;
             }
             return false;
+    }
+    import std.file;
+
+    void createVPSDisk(VPS vps) {
+        if(vps.osTemplate == "ubuntu") {
+            import std.process, std.format;
+            string disk_path = "/srv/scylla/disk_images/" ~ vps.uuid;
+            string kernel_path = "/srv/scylla/boot_images/" ~ vps.uuid;
+            if(!exists(disk_path)) {
+                mkdir(disk_path);
+            }
+
+            if(!exists(kernel_path)) {
+                mkdir(kernel_path);
+            }
+
+            if(exists(disk_path ~ "/" ~ vps.osTemplate)) {
+                remove(disk_path ~ "/" ~ vps.osTemplate);
+            }
+
+            if(exists(kernel_path ~ "/" ~ vps.osTemplate)) {
+                remove(kernel_path ~ "/" ~ vps.osTemplate);
+            }
+
+            auto a = executeShell("cp /srv/scylla/disk_images/generic/" ~ vps.osTemplate ~ " " ~ disk_path);
+            writeln(a.output);
+            auto b = executeShell("cp /srv/scylla/boot_images/generic/" ~ vps.osTemplate ~ " " ~ kernel_path);
+            writeln(b.output);
+
+            auto c = executeShell(format!"truncate -s %dG %s"(vps.driveSizes["rootfs"], disk_path ~ "/" ~ vps.osTemplate)); 
+            writeln(c.output);
+
+            writeln(executeShell("e2fsck -f -y " ~ disk_path ~ "/" ~ vps.osTemplate).output);
+            writeln(executeShell("resize2fs " ~ disk_path ~ "/" ~ vps.osTemplate).output);
+
+            vps.boot.kernelImagePath = kernel_path ~ "/" ~ vps.osTemplate;
+            import firecracker_d.models.drive;
+
+            bool foundRootDevice = false;
+
+            foreach(drive; vps.drives) {
+                if(drive.isRootDevice) {
+                    foundRootDevice = true;
+                    drive.pathOnHost = disk_path ~ "/" ~ vps.osTemplate;
+                }
+            }
+
+            if(!foundRootDevice) {
+                Drive _d;
+                _d.driveID = "rootfs";
+                _d.pathOnHost = disk_path ~ "/" ~ vps.osTemplate;
+                _d.isRootDevice = true;
+                _d.isReadOnly = false;
+                vps.drives ~= _d; 
+            }
+
+            db.insertVPS(vps);
+        }
+        else {
+            writeln("unknown template ", vps.osTemplate);
+        }
+
     }
 
     class ScyllaREST : NodeREST {
@@ -110,51 +185,17 @@ class ScyllaServer {
             return "OK";
         }
 
+        
+
         @path("vps/new")
         string postNewVPS(string key, VPS vps) {
             if(!serverConfig.onboarded) {
                 logInfo("got a request without being initialized");
                 return "NOT_ONBOARDED";
             }
-            import std.file;
             if(key == serverConfig.communicationKey) {
                 if(vps.state == VPS.State.provisioned) {
-                    if(vps.osTemplate == "ubuntu-1804") {
-                        import std.process, std.format;
-                        string disk_path = "/srv/scylla/disk_images/" ~ vps.uuid;
-                        string kernel_path = "/srv/scylla/boot_images/" ~ vps.uuid;
-                        if(!exists(disk_path)) {
-                            mkdir(disk_path);
-                        }
-
-                        if(!exists(kernel_path)) {
-                            mkdir(kernel_path);
-                        }
-
-                        auto a = executeShell("cp /srv/scylla/disk_images/generic/ubuntu " ~ disk_path);
-                        writeln(a.output);
-                        auto b = executeShell("cp /srv/scylla/boot_images/generic/ubuntu " ~ kernel_path);
-                        writeln(b.output);
-
-                        auto c = executeShell(format!"truncate -s %dG %s"(vps.driveSizes["rootfs"], disk_path ~ "/ubuntu")); 
-                        writeln(c.output);
-
-                        writeln(executeShell("e2fsck -f -y " ~ disk_path ~ "/ubuntu").output);
-                        writeln(executeShell("resize2fs " ~ disk_path ~ "/ubuntu").output);
-
-                        vps.boot.kernelImagePath = kernel_path ~ "/ubuntu";
-                        import firecracker_d.models.drive;
-
-                        Drive _d;
-                        _d.driveID = "rootfs";
-                        _d.pathOnHost = disk_path ~ "/ubuntu";
-                        _d.isRootDevice = true;
-                        _d.isReadOnly = false;
-                        vps.drives ~= _d; 
-                    }
-                    else {
-                        writeln("unknown template ", vps.osTemplate);
-                    }
+                    
                 }
                 else {
                     writeln("vps was not in state expected..");
@@ -177,12 +218,21 @@ class ScyllaServer {
             }
             if(hasAccess(key, uuid)) { 
                 if(_action == "auth_key") {
-                    import dauth;
-                    string newAuthKey = randomToken(48);
-                    db.getClient().getDatabase(3).request!string("set", newAuthKey, uuid, "EX", 100);
-                    logInfo("got auth key request for uuid: " ~ uuid);
-                    logInfo("sending auth key: " ~ newAuthKey);
-                    return newAuthKey;
+                    logError("auth_key has been removed");
+                    return "NO";
+                }
+
+                if(_action == "redeploy") {
+                    logInfo("redeploying vm");
+                    vmServer.halt(uuid);
+                    logInfo("halted vm");
+                    Nullable!VPS _v = db.getVPS(uuid);
+                    if(!_v.isNull)
+                    {
+                        VPS v = _v;
+                        createVPSDisk(v);
+                    }
+
                 }
 
                 logInfo("got request for " ~ uuid);
@@ -422,7 +472,7 @@ class ScyllaServer {
         if(serverConfig.onboarded) {
             db = new RedisDatabaseDriver(serverConfig.redisHost, serverConfig.redisPort);
             settings.sessionStore = new MemorySessionStore();
-            keyStore = db.getClient().getDatabase(3); 
+            keyStore = db.getClient().getDatabase(4); 
             spoolAllVMs();
         }
         else {
