@@ -1,0 +1,27 @@
+
+syntax = "proto3";
+
+package scylla.zone;
+
+service ZoneHandler {
+	rpc ListZones(Empty) returns (stream Zone) {}
+	rpc ListResources(ZoneIdentifier) returns (ResourceIdentifier) {}
+}
+
+message ResourceIdentifier {
+	ZoneIdentifier zone = 1;
+	string uuid = 2;
+}
+
+message ZoneIdentifier {
+	string zone_id = 1;
+}
+
+message Zone {
+	string location = 1;
+	string name = 2;
+}
+
+message Empty {
+
+}

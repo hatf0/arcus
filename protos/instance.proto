@@ -1,0 +1,67 @@
+
+syntax = "proto3";
+
+package scylla.instance;
+import "drive.proto";
+import "zone.proto";
+
+
+service InstanceHandler {
+	rpc ListInstances(scylla.zone.ZoneIdentifier) returns (stream scylla.zone.ResourceIdentifier) {} //string in this case being the zone identifier
+
+	rpc GetInstance(scylla.zone.ResourceIdentifier) returns (InstanceStatus) {}
+	rpc DeleteInstance(scylla.zone.ResourceIdentifier) returns (InstanceReply) {}
+
+	rpc DeployInstance(stream ProvisioningInfo) returns (stream scylla.zone.ResourceIdentifier) {} 
+	rpc UpdateInstance(InstanceUpdateAction) returns (InstanceReply) {}
+	rpc ActionInstance(InstanceAction) returns (InstanceReply) {}
+}
+
+message InstanceReply {
+	int32 code = 1;
+	string info = 2;
+}
+
+message InstanceUpdateAction {
+	scylla.zone.ResourceIdentifier id = 1;
+	ProvisioningInfo update = 2;
+}
+
+message InstanceAction {
+	enum Action {
+		START = 0;
+		STOP = 1;
+		REBOOT = 2;
+		REDEPLOY = 3;
+		RECOVERY = 4;
+	}
+	Action action = 1;
+	scylla.zone.ResourceIdentifier instance = 2;
+}
+
+message ProvisioningInfo {
+	string hostname = 1;
+	int32 vcpus = 2;
+	int64 ram = 3;
+	string template = 4;
+}
+
+message InstanceStatus {
+	enum Status {
+		ONLINE = 0;
+		OFFLINE = 1;
+		REDEPLOYING = 2;
+		RECOVERY = 3;
+		PROVISIONING = 4;
+	}
+	string datacenter = 1;
+	string hostname = 2;
+	int32 vcpus = 3;
+	int64 ram = 4;
+	string template = 5;
+	Status status = 6;
+	repeated scylla.drive.Drive drive = 7;
+}
+
+
+

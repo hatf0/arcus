@@ -1,0 +1,39 @@
+zones hold nodes
+nodes hold instances
+
+zones have one main "zone controller", where redis is replicated to
+
+      (Redis)
+[Master] -> [Zone us-west-1] -> Node 0-100
+	    [Zone us-east-1] -> Node 0-100
+	    [Zone us-south-1] -> Node 0-100
+	    [Zone us-central-1] -> Node 0-100 
+
+
+on api request for new node
+    (HTTPS)      (randomly chosen based on load)
+(User) -> [Load Balancer] -> [API]  
+			     [API]
+			     [API]
+			     [API]
+    (gRPC)
+[API] -> [Zone (specified)]
+
+	   (Redis pubsub ??)
+[Zone (specified)] -> Node broadcast with provisioning information
+
+If node has same disk as requested, and CPU load is okay:
+	Respond with "OK", proceed to deploy VPS
+
+
+Node should:
+	* Create VPS
+	* Assign disk to VM
+	* Create a new NIC, and pass through all traffic (as well as give it a specific MAC prefix)
+	* Start VPS to provision it
+	* SSH into VPS, then reset the SSH key to one specified by the user
+	* Shut down VPS
+	* Ask for a new public IP for the box
+
+
+** ALL VPS IMAGES SHOULD AUTOMATICALLY SETUP THE IP INTERFACE !! **

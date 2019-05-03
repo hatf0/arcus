@@ -26,6 +26,8 @@ configuration "orchestrator" {
     targetName "orchestrator"
     sourcePaths "orchestrator"
     dependency "hasdata" version="~>1.1.0"
+    dependency "grpc" version="~>0.2.0"
+    dependency "protobuf" version="~>0.5.0"
 }
 
 configuration "web" {

@@ -145,14 +145,6 @@ class FirecrackerVM {
         string[] getLogs() {
             string[] ret;
             string line;
-            import hasdata;
-            if(__vmPipes.stdout.hasData) {
-                writeln(__vmPipes.stdout.readln());
-            }
-
-            if(__vmPipes.stderr.hasData) {
-                writeln(__vmPipes.stderr.readln());
-            }
             return ret;
         }
 

@@ -1,0 +1,43 @@
+
+syntax = "proto3"; 
+
+package scylla.drive;
+import "zone.proto";
+
+service DriveHandler {
+	rpc ListDrives(scylla.zone.ZoneIdentifier) returns (stream scylla.zone.ResourceIdentifier) {}
+
+	rpc GetDrive(scylla.zone.ResourceIdentifier) returns (Drive) {}
+	rpc DeleteDrive(scylla.zone.ResourceIdentifier) returns (DriveReply) {}
+	rpc DeployDrive(stream Drive) returns (stream scylla.zone.ResourceIdentifier) {}
+	rpc UpdateDrive(DriveUpdateAction) returns (DriveReply) {}
+	rpc ActionDrive(DriveAction) returns (DriveReply) {}
+
+}
+
+message DriveAction {
+	enum Action {
+		ATTACH = 0;
+		DETACH = 1;
+	}
+	Action action = 1;
+	scylla.zone.ResourceIdentifier drive = 2;
+}
+
+message DriveUpdateAction {
+	scylla.zone.ResourceIdentifier id = 1;
+	Drive update = 2;
+}
+	
+message DriveReply {
+	int32 code = 1;
+	string info = 2;
+}
+
+message Drive {
+	string drive_id = 1;
+	int64 size = 2;
+	bool is_root_device = 3;
+	bool is_read_only = 4;
+	string template = 5;
+}
