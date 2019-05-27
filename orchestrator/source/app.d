@@ -41,9 +41,6 @@ void main()
 
     ScyllaServer s = new ScyllaServer("/etc/scylla/config.json");
 
-//    lowerPrivileges("nobody", "kvm");
     s.startListener();
-
-
-	runApplication();
+    runApplication();
 }

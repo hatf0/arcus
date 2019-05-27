@@ -5,6 +5,7 @@ import std.algorithm.searching;
 import std.algorithm.mutation;
 import std.datetime;
 import core.sync.mutex;
+import scylla.core.resource;
 
 shared class Resource {
 	Mutex mtx;
