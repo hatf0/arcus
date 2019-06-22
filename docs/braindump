@@ -22,18 +22,18 @@ on api request for new node
 	   (Redis pubsub ??)
 [Zone (specified)] -> Node broadcast with provisioning information
 
-If node has same disk as requested, and CPU load is okay:
-	Respond with "OK", proceed to deploy VPS
+
+ALL RESOURCES:
+	std.concurrency provides a method for us to spawn these processes and have them "attached" to a global thread manager
+	
+	this allows us to leave the resources unmodified- avoiding data races (for the most part, TOCTOU might be an issue)
+
+	we use a messaging system to avoid this entirely- events which MUST be executed in order can be done through prioritySend
+
+	as well- we must ensure that resources NEVER destroy their thread loop. it should NEVER occur.
 
 
-Node should:
-	* Create VPS
-	* Assign disk to VM
-	* Create a new NIC, and pass through all traffic (as well as give it a specific MAC prefix)
-	* Start VPS to provision it
-	* SSH into VPS, then reset the SSH key to one specified by the user
-	* Shut down VPS
-	* Ask for a new public IP for the box
 
 
-** ALL VPS IMAGES SHOULD AUTOMATICALLY SETUP THE IP INTERFACE !! **
+
+
