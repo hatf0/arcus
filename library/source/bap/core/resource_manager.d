@@ -13,8 +13,8 @@ static int activeMutexes = 0;
 //TODO: replace with Mutex with ReadWriteMutex?
 
 // Here be dragons..
-mixin template ResourceInjector(string resourceName) {
-	mixin("import " ~ resourceName.toLower() ~ "; bool instantiated" ~ resourceName ~ " = () {g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); g_ResourceManager.registerClass(\"" ~ resourceName ~ "\", cast(Resource delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); return true;}();");
+mixin template ResourceInjector(string resourceName, string packageName = "scylla.resource") {
+	mixin("import " ~ packageName ~ "." ~ resourceName.toLower() ~ "; bool instantiated" ~ resourceName ~ " = () {g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); g_ResourceManager.registerClass(\"" ~ resourceName ~ "\", cast(Resource delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); return true;}();");
 
 }
 
