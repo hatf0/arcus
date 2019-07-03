@@ -1,12 +1,89 @@
-module scylla.core.firecracker;
+module scylla.core.instance.firecracker.vm;
 import std.stdio;
-import firecracker_d.models.client_models;
+//import firecracker_d.models.client_models;
 import firecracker_d.core.client;
 import bap.models.vps;
 import std.file;
 import std.process;
 import core.sys.posix.signal;
 import std.concurrency;
+import bap.core.resource_manager;
+
+shared class FirecrackerVmSingleton : ResourceSingleton {
+	override Resource instantiate(string data) {
+		shared(FirecrackerVm) res = new shared(FirecrackerVm)();
+		return cast(Resource)res;
+
+	}
+
+	this() {
+		mtx = new shared(Mutex)();
+	}
+}
+
+shared class FirecrackerVm : Resource {
+	private {
+		VPS __template;
+		string __id;
+		string __socket;
+		bool __init = false;
+		string __logPath;
+		string __metricsPath;
+		FirecrackerAPIClient __client;
+		ProcessPipes __vmPipes;
+	}
+
+	@property string socketPath() {
+		return __socket.idup;
+	}
+
+	override bool exportable() {
+		return true;
+	}
+
+	override string getClass() {
+		return "FirecrackerVm";
+	}
+
+	override string getStatus() {
+		if(__init) {
+			return "OK";
+		}
+		
+		return "NOINIT";
+	}
+
+	override bool destroy() {
+		return false;
+	}
+
+	override bool deploy() {
+		return true;
+	}
+
+	override bool connect(ResourceIdentifier id) {
+		super.connect(id);
+		return true;
+	}
+
+	override bool disconnect(ResourceIdentifier id) {
+		return true;
+	}
+
+	override bool canDisconnect(ResourceIdentifier id) {
+		return true;
+	}
+
+
+	this() {
+		mtx = new shared(Mutex)();
+	}
+
+}
+
+
+	/*
+
 
 class FirecrackerVM {
         private {
@@ -279,3 +356,4 @@ class FirecrackerVM {
 
 
 }
+*/

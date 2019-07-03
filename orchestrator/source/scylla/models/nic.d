@@ -1,6 +1,5 @@
 module scylla.models.nic;
 import scylla.core.utils;
-import scylla.core.resource_manager;
 import dproto.dproto;
 
 mixin ProtocolBufferFromString!"
@@ -50,16 +49,7 @@ shared class NICResource : Resource {
 		string _devName;
 		SecurityPolicy _secpol;
 		bool _inUse = false;
-	}
-
-	NetworkInterface getRepresentation() {
-		synchronized {
-			NetworkInterface n;
-			n.secpol = cast(SecurityPolicy)_secpol;
-			n.public_ip = _public_ip;
-			n.private_ip = _private_ip;
-			return n;
-		}
+		bool attached = false;
 	}
 
 	override string getClass() {
@@ -87,28 +77,20 @@ shared class NICResource : Resource {
 	}
 
 	override bool destroy() {
-		synchronized {
+		bool status = false;
 
-			bool status = false;
-
-			if(canDisconnect()) {
-				status = true;
-			}
-			if(attached) {
-				status = false;
-			}
-			return status;
+		if(attached) {
+			status = false;
 		}
+		return status;
 	}
 
 	override bool deploy() {
-		synchronized {
 
-			import std.format : format;
-			import std.random : uniform;
+		import std.format : format;
+		import std.random : uniform;
 
-			return true;
-		}
+		return true;
 	}
 
 	override bool connect(ResourceIdentifier id) {
@@ -122,10 +104,10 @@ shared class NICResource : Resource {
 		return status;
 	}
 
-	override bool disconnect() {
+	override bool disconnect(ResourceIdentifier id) {
 		bool status = false;
 		useResource();
-		if(canDisconnect()) {
+		if(canDisconnect(id)) {
 		
 		}
 
@@ -134,20 +116,11 @@ shared class NICResource : Resource {
 		return status;
 	}
 
-	override bool canDisconnect() {
+	override bool canDisconnect(ResourceIdentifier id) {
 		if(_inUse) {
 			return false;
 		}
 
 		return true;
-	}
-
-	Resource constructor(string uuid) {
-		auto r = new shared NICResource();
-		import core.sync.mutex;
-		mtx = new shared Mutex();
-		uuid = uuid;
-
-		return cast(Resource)r;
 	}
 }

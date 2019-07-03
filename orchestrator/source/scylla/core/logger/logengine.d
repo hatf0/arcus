@@ -1,4 +1,5 @@
-module scylla.core.logger;
+module scylla.core.logger.logengine;
+import bap.core.resource_manager;
 import zmqd;
 import std.stdio;
 import core.thread, core.time;
@@ -18,8 +19,31 @@ mixin ProtocolBufferFromString!"
 	}
 ";
 
-class LogEngine {
+shared class LogEngineSingleton : ResourceSingleton {
+	private {
+		bool created = false;
+	}
+
+	override Resource instantiate(string data) {
+		assert(!created, "cannot be created more then once.");
+		shared(LogEngine) res = new shared(LogEngine)(data);
+
+		created = true;
+
+		return cast(Resource)res;
+	}
+
+	this() {
+		mtx = new shared(Mutex)();
+	}
+}
+
+static shared(LogEngineSingleton) g_LogEngineSingleton;
+
+
+shared class LogEngine : Resource {
 	private:
+		__gshared bool run = true;
 		LogLevel maxLevel = LogLevel.INFO;
 		string logFile; 
 
@@ -85,7 +109,7 @@ class LogEngine {
 			auto broker = Socket(SocketType.pull);
 			broker.bind("inproc://logger");
 
-			while(true) {
+			while(run) {
 				auto frame = Frame();
 				auto r = broker.tryReceive(frame);
 				if(r[1]) {
@@ -98,16 +122,50 @@ class LogEngine {
 			}
 		}
 	public:
-		this(string file, LogLevel level) {
+		override bool exportable() {
+			return false;
+		}
+
+		override string getClass() {
+			return "LogEngine";
+		}
+
+		override string getStatus() {
+			return "ACTIVE";
+		}
+
+		override bool destroy() {
+			writeln("log engine shutting down");
+			run = false;
+			return true;
+		}
+
+		override bool deploy() {
+			run = true;
+			auto thread = new Thread(cast(void delegate())&workerThread);
+			thread.isDaemon(true);
+			thread.start();
+			return true;
+		}
+
+		override bool connect(ResourceIdentifier id) {
+			assert(0, "connect called on LogEngine");
+		}
+
+		override bool disconnect(ResourceIdentifier id) {
+			assert(0, "disconnect called on LogEngine");
+		}
+
+		override bool canDisconnect(ResourceIdentifier id) {
+			return false;
+		}
+
+		this(string file) {
 			if(file != "") {
 				logFile = file.idup;
 			}
 
-			maxLevel = level;
-			auto thread = new Thread(&workerThread);
-			thread.isDaemon(true);
-			thread.start();
+			mtx = new shared(Mutex)();
 
-			Thread.sleep(100.msecs);
 		}
 }

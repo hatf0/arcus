@@ -2,8 +2,8 @@ import vibe.vibe;
 import std.stdio;
 import bap.core.node;
 import bap.model;
-import scylla.core.server;
-import scylla.core.kintsugi;
+import scylla.core.server.server;
+import scylla.core.server.kintsugi;
 
 void main()
 {

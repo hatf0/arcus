@@ -1,4 +1,4 @@
-module scylla.models.config;
+module scylla.models.config.scylla;
 import jsonizer;
 import std.stdio;
 import std.file;

@@ -1,25 +1,25 @@
-module scylla.core.server;
+module scylla.core.server.server;
 import std.stdio;
 import bap.core.node;
 import bap.model;
 import bap.core.redis;
 import bap.core.db;
-import scylla.models.config;
+import scylla.models.config.scylla;
+import scylla.core.root.rootdriver;
 import vibe.web.auth;
 import vibe.http.session;
 import vibe.web.web : noRoute;
-import scylla.core.kintsugi;
+import scylla.core.server.kintsugi;
 import scylla.core.utils;
 import asdf;
-import scylla.core.resource_manager;
+import bap.core.resource_manager;
 
 class ScyllaServer {
     private {
         ScyllaConfig serverConfig;
         RedisDatabaseDriver db;
-	LogEngine _log;
-	ResourceManager resourceMgr;
         Kintsugi vmServer;
+	RootDriver root;
 
         string configPath;
     };
@@ -64,14 +64,30 @@ class ScyllaServer {
     }
 
     this(string _configPath = "./config.json") {
-        configPath = _configPath;
-	_log = new LogEngine("", LogLevel.INFO);
+        
+	g_ResourceManager = new ResourceManager();
 
+	//inject vital resources before everything else (logger)
+	mixin ResourceInjector!("LogEngine", "scylla.core.logger");
+
+	//deploy it so it actually works lol
+
+	ResourceIdentifier logEngine = g_ResourceManager.instantiateResource("LogEngine");
+
+	shared(Resource) _l = g_ResourceManager.getResource(logEngine);
+	_l.useResource();
+
+	_l.deploy();
+
+	_l.releaseResource();
 	log(LogLevel.INFO, "arcus starting up..");
+
+	configPath = _configPath;
+
         loadConfig(configPath);
 
+	root = new RootDriver();
         vmServer = new Kintsugi();
-	resourceMgr = new ResourceManager();
 
 	//resourceMgr.registerClass("NIC", &NICResource.instantiate());
     }

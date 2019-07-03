@@ -1,23 +1,8 @@
 module scylla.core.utils;
 import zmqd;
 import dproto.dproto;
-public import scylla.core.logger;
-
-mixin ProtocolBufferFromString!"
-	message ResourceIdentifier {
-		ZoneIdentifier zone = 1;
-		string uuid = 2;
-	}
-
-	message ZoneIdentifier {
-		string zoneId = 1;
-	}
-
-	message Zone {
-		string location = 1;
-		string name = 2;
-	}
-";
+public import scylla.core.logger.logengine;
+public import bap.core.resource_manager;
 
 void log(LogLevel l, string msg, string origin = __FILE__) {
 	auto requester = Socket(SocketType.push);
