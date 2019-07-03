@@ -4,6 +4,7 @@ import bap.core.node;
 import bap.model;
 import scylla.core.server.server;
 import scylla.core.server.kintsugi;
+import bap.core.resource_manager;
 
 void main()
 {
@@ -27,9 +28,14 @@ void main()
     import core.sys.posix.sys.stat, std.conv, std.string;
     if(!exists("/etc/scylla")) {
         std.file.mkdir("/etc/scylla");
+	std.file.mkdir("/etc/scylla/backups");
         executeShell("chmod -R 755 /etc/scylla");
         executeShell("chown -R nobody:kvm /etc/scylla"); 
     }
+
+    // all classes will be backed up to this path
+
+    filePath = "/etc/scylla/backups";
 
     if(!exists("/srv/scylla")) {
         std.file.mkdir("/srv/scylla");
@@ -38,9 +44,18 @@ void main()
         executeShell("chmod -R 755 /srv/scylla");
         executeShell("chown -R nobody:kvm /srv/scylla"); 
     }
+    /* 
+       the g_ResourceManager persists for the lifetime of the app.. ensure it's created before something that's destroyed fast
+     */
+
+    g_ResourceManager = new ResourceManager();
+    mixin ResourceInjector!("LogEngine", "scylla.core.logger");
 
     ScyllaServer s = new ScyllaServer("/etc/scylla/config.json");
 
     s.startListener();
     runApplication();
+
+    g_ResourceManager.cleanup();
+
 }

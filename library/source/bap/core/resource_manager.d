@@ -13,8 +13,9 @@ static int activeMutexes = 0;
 //TODO: replace with Mutex with ReadWriteMutex?
 
 // Here be dragons..
-mixin template ResourceInjector(string resourceName) {
-	mixin("import " ~ resourceName.toLower() ~ "; bool instantiated" ~ resourceName ~ " = () {g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); g_ResourceManager.registerClass(\"" ~ resourceName ~ "\", cast(Resource delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); return true;}();");
+mixin template ResourceInjector(string resourceName, string path = "scylla.core") {
+	import std.string;
+	mixin("import " ~ path ~ "." ~ resourceName.toLower() ~ "; bool instantiated" ~ resourceName ~ " = () {g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); g_ResourceManager.registerClass(\"" ~ resourceName ~ "\", cast(Resource delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); return true;}();");
 
 }
 
@@ -52,7 +53,7 @@ mixin ProtocolBufferFromString!"
 
 ";
 
-static filePath = "/mnt/fuse";
+static string filePath;
 void runMount(Fuse obj, Operations op, string path) {
 		obj.mount(op, path, []);
 }
@@ -344,6 +345,7 @@ shared class Resource {
 
 	abstract string getClass(); 
 	abstract string getStatus();
+	abstract bool exportable();
 
 	ubyte[] exportResource() {
 		// The MinimalResource struct
@@ -358,6 +360,9 @@ shared class Resource {
 		// will use the ResourceStorage
 		// to store configurations and have
 		// it persistent.
+		if(!exportable) {
+			return null;
+		}
 		MinimalResource res = MinimalResource();
 		DateTime _creation = creation_date;
 		res.creation_time = _creation.toISOExtString();
@@ -374,6 +379,10 @@ shared class Resource {
 		import std.process, std.file;
 
 		import std.stdio : writefln;
+
+		if(storage is null) {
+			return true;
+		}
 
 		string path = filePath ~ "/" ~ self.uuid;
 
@@ -423,10 +432,12 @@ shared class Resource {
 	bool deploy() {
 		/* DANGEROUS */
 		ResourceStorage st = cast(ResourceStorage)storage;
-		ResourceIdentifier id = cast(ResourceIdentifier)self;
+		if(!(st is null)) {
+			ResourceIdentifier id = cast(ResourceIdentifier)self;
 
-		g_ResourceManager.requestMount(st, self);
-		deployed = true;
+			g_ResourceManager.requestMount(st, self);
+			deployed = true;
+		}
 		return true;
 	}
 		
@@ -555,7 +566,7 @@ class ResourceManager {
 
 		assert(!(r is null), "Resource was null during instantiation");
 
-		import utils;
+		import bap.core.utils;
 
 		r.creation_date = cast(shared(DateTime))Clock.currTime();
 
@@ -667,12 +678,16 @@ class ResourceManager {
 		foreach(d, k; _resources) {
 			import std.file : write;
 			if(!(k is null)) {
-				debug writefln("writing out %s", k.self.uuid);
-				write(k.self.uuid ~ ".bak", k.exportResource());
+				if(k.exportable()) {
+					debug writefln("writing out %s", k.self.uuid);
+					write(k.self.uuid ~ ".bak", k.exportResource());
+				}
 				debug writefln("destroying resource %s", k.self.uuid);
 				assert(k.destroy(), "failed to destroy object");
 			}
 		}
+
+		writefln("done!");
 	}
 
 

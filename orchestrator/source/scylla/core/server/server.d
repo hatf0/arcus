@@ -65,12 +65,6 @@ class ScyllaServer {
 
     this(string _configPath = "./config.json") {
         
-	g_ResourceManager = new ResourceManager();
-
-	//inject vital resources before everything else (logger)
-	mixin ResourceInjector!("LogEngine", "scylla.core.logger");
-
-	//deploy it so it actually works lol
 
 	ResourceIdentifier logEngine = g_ResourceManager.instantiateResource("LogEngine");
 

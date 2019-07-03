@@ -71,7 +71,7 @@ shared class FirecrackerVmLogger : Resource {
 
 			import scylla.core.instance.firecracker.vm;
 
-			shared(FirecrackerVm) vm = cast(FirecrackerVm)_vm;
+			shared(FirecrackerVm) vm = cast(shared(FirecrackerVm))_vm;
 
 			Logger log;
 			log.logFifo = __logPath;

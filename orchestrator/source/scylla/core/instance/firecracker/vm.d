@@ -30,7 +30,7 @@ shared class FirecrackerVm : Resource {
 		string __logPath;
 		string __metricsPath;
 		FirecrackerAPIClient __client;
-		ProcessPipes __vmPipes;
+//		ProcessPipes __vmPipes;
 	}
 
 	@property string socketPath() {

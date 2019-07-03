@@ -137,7 +137,8 @@ shared class LogEngine : Resource {
 		override bool destroy() {
 			writeln("log engine shutting down");
 			run = false;
-			return true;
+
+			return super.destroy();
 		}
 
 		override bool deploy() {
@@ -145,7 +146,7 @@ shared class LogEngine : Resource {
 			auto thread = new Thread(cast(void delegate())&workerThread);
 			thread.isDaemon(true);
 			thread.start();
-			return true;
+			return super.deploy();
 		}
 
 		override bool connect(ResourceIdentifier id) {
