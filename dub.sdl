@@ -21,6 +21,7 @@ dependency "library" version="*"
 dependency "jsonizer" version="~>0.7.6"
 dependency "requests" version="~>1.0.5-fixssl"
 dependency "dproto" version="~master"
+dependency "dfuse" version="~>0.3.1"
 
 configuration "orchestrator" {
     targetType "executable"
