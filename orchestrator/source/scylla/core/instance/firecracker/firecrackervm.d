@@ -1,4 +1,4 @@
-module scylla.core.instance.firecracker.vm;
+module scylla.core.instance.firecracker.firecrackervm;
 import std.stdio;
 //import firecracker_d.models.client_models;
 import firecracker_d.core.client;
@@ -11,7 +11,7 @@ import bap.core.resource_manager;
 
 shared class FirecrackerVmSingleton : ResourceSingleton {
 	override Resource instantiate(string data) {
-		shared(FirecrackerVm) res = new shared(FirecrackerVm)();
+		shared(FirecrackerVm) res = new shared(FirecrackerVm)(data);
 		return cast(Resource)res;
 
 	}
@@ -20,6 +20,8 @@ shared class FirecrackerVmSingleton : ResourceSingleton {
 		mtx = new shared(Mutex)();
 	}
 }
+
+static shared(FirecrackerVmSingleton) g_FirecrackerVmSingleton;
 
 shared class FirecrackerVm : Resource {
 	private {
@@ -31,6 +33,37 @@ shared class FirecrackerVm : Resource {
 		string __metricsPath;
 		FirecrackerAPIClient __client;
 //		ProcessPipes __vmPipes;
+	}
+
+	file_entry[] files = [
+	{
+		writable: false,
+		name: "cpus",
+		file_type: file_entry.file_types.raw,
+		type: file_entry.types.typeInt
+	},
+	{
+		writable: false,
+		name: "ram",
+		file_type: file_entry.file_types.raw,
+		type: file_entry.types.typeInt64
+	},
+	{
+		writable: false,
+		name: "namespace",
+		file_type: file_entry.file_types.raw,
+		type: file_entry.types.typeString
+	},
+	{
+		writable: false,
+		name: "ht_enabled",
+		file_type: file_entry.file_types.raw,
+		type: file_entry.types.typeBool
+	}
+	];
+
+	override file_entry[] getFiles() {
+		return cast(file_entry[])files;
 	}
 
 	@property string socketPath() {
@@ -54,11 +87,11 @@ shared class FirecrackerVm : Resource {
 	}
 
 	override bool destroy() {
-		return false;
+		return super.destroy();
 	}
 
 	override bool deploy() {
-		return true;
+		return super.deploy();
 	}
 
 	override bool connect(ResourceIdentifier id) {
@@ -75,7 +108,10 @@ shared class FirecrackerVm : Resource {
 	}
 
 
-	this() {
+	this(string data) {
+		import bap.core.utils;
+		self = id("example", data); 
+		storage = cast(shared(ResourceStorage))new ResourceStorage(cast(file_entry[])files, self);
 		mtx = new shared(Mutex)();
 	}
 

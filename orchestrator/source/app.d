@@ -5,6 +5,7 @@ import bap.model;
 import scylla.core.server.server;
 import scylla.core.server.kintsugi;
 import bap.core.resource_manager;
+extern(C) __gshared string[] rt_options = [ "gcopt=initReserve:50 profile:1" ];
 
 void main()
 {
@@ -35,7 +36,8 @@ void main()
 
     // all classes will be backed up to this path
 
-    filePath = "/etc/scylla/backups";
+    filePath = "/etc/scylla/mounts";
+    backupPath = "/etc/scylla/backups";
 
     if(!exists("/srv/scylla")) {
         std.file.mkdir("/srv/scylla");
@@ -50,12 +52,22 @@ void main()
 
     g_ResourceManager = new ResourceManager();
     mixin ResourceInjector!("LogEngine", "scylla.core.logger");
-
+    mixin ResourceInjector!("FirecrackerVm", "scylla.core.instance.firecracker"); 
+    mixin ResourceInjector!("FirecrackerDrive", "scylla.core.instance.firecracker");
+    foreach (string name; dirEntries(backupPath, SpanMode.shallow)) {
+	    import std.path : buildPath;
+	    ubyte[] data = cast(ubyte[])read(buildPath(backupPath, name));
+	    g_ResourceManager.instantiateFromBackup(data);
+	    remove(buildPath(backupPath, name));
+    }
     ScyllaServer s = new ScyllaServer("/etc/scylla/config.json");
 
     s.startListener();
     runApplication();
 
     g_ResourceManager.cleanup();
+
+    import core.memory;
+    GC.disable;
 
 }

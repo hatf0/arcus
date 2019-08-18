@@ -5,6 +5,8 @@ import bap.core.node;
 import std.json;
 import asdf;
 import vibe.d;
+import std.algorithm.searching : canFind;
+import std.string;
 
 class RedisDatabaseDriver : DatabaseDriver {
   private {
@@ -46,7 +48,6 @@ class RedisDatabaseDriver : DatabaseDriver {
     }
     else {
       import dauth;
-      import std.string;
       try {
           Password p = toPassword(password.dup);
           if(isSameHash(p, parseHash(hash.replace("^", "/").strip()))) {
@@ -83,7 +84,6 @@ class RedisDatabaseDriver : DatabaseDriver {
     } catch(Exception e) {
         logError("failed to set user with redis");
     }
-    import std.string;
     if(redisOutput.canFind("error")) {
       return false;
     }
@@ -137,7 +137,7 @@ class RedisDatabaseDriver : DatabaseDriver {
 
   User[] getAllUsers() nothrow {
     User[] collected;
-    import std.string, std.format, core.exception;
+    import std.format, core.exception;
     try {
         RedisReply!string userList = users.keys!string("*");
         while(userList.hasNext()) {
@@ -168,7 +168,6 @@ class RedisDatabaseDriver : DatabaseDriver {
         return false;
     }
 
-    import std.string;
     if(redisOutput.canFind("error")) {
       return false;
     }
@@ -221,7 +220,7 @@ class RedisDatabaseDriver : DatabaseDriver {
 
   VPS[] getAllVPS() nothrow {
     VPS[] collected;
-    import std.string, std.format;
+    import std.format;
     try {
         RedisReply!string vpsList = vpses.keys!string("*");
         while(vpsList.hasNext()) {
@@ -253,7 +252,6 @@ class RedisDatabaseDriver : DatabaseDriver {
         return false;
     }
 
-    import std.string;
     if(redisReply.canFind("error")) {
       return false;
     }
@@ -303,7 +301,7 @@ class RedisDatabaseDriver : DatabaseDriver {
 
   Node[] getAllNode() nothrow {
     Node[] collected;
-    import std.string, std.format;
+    import std.format;
     try {
         RedisReply!string nodeList = nodes.keys!string("*");
         while(nodeList.hasNext()) {

@@ -88,7 +88,8 @@ void hnput(ubyte* dst, uint src, size_t n) {
 
 class dsin_addr {
 private:
-	void setFields(ubyte[4] ip) {
+	void setFields(ubyte[4] _ip) {
+		ubyte[4] ip = _ip.dup;
 		a = ip[0];
 		b = ip[1];
 		c = ip[2];

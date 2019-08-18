@@ -3,10 +3,12 @@ import std.string;
 import std.algorithm.searching;
 import std.algorithm.mutation;
 import std.datetime;
+public import std.variant : Variant;
 public import core.sync.mutex;
 public import dproto.dproto;
 
-static ResourceManager g_ResourceManager;
+import core.stdc.errno;
+static __gshared ResourceManager g_ResourceManager;
 static int activeMutexes = 0;
 
 
@@ -38,6 +40,7 @@ mixin ProtocolBufferFromString!"
 		string path = 1;
 		bytes data = 2;
 		bool writable = 3;
+		int32 type = 4;
 	}
 
 
@@ -53,7 +56,8 @@ mixin ProtocolBufferFromString!"
 
 ";
 
-static string filePath;
+static __gshared string filePath;
+static __gshared string backupPath;
 void runMount(Fuse obj, Operations op, string path) {
 		obj.mount(op, path, []);
 }
@@ -62,22 +66,40 @@ import dfuse.fuse;
 
 //TODO: can we like.. not deal with const(char)[]s? i don't like using toStringz
 
+
+/* 
+   In your resource, specify an array of these for persistent storage of variables (i.e size, etc)
+*/
+
 struct file_entry {
 	enum file_types {
 		json, //appends .json to the end
 		xml, //appends .xml to the end
 		plaintext, //appends .txt to the end
-		log //appends .log to the end
+		log, //appends .log to the end
+		raw //raw data
 	};
+
+	enum types {
+		typeBool,
+		typeString,
+		typeFloat,
+		typeInt,
+		typeInt64,
+		typeRaw 
+	};
+
 	bool writable;
 	string name;
 	ubyte[] buf;
 	file_types file_type;
+	types type;
 };
 
 struct ResourceFile {
 	bool writable;
 	ubyte[] buf;
+	file_entry.types type;
 }
 
 import std.algorithm.searching : canFind;
@@ -98,12 +120,120 @@ class ResourceStorage : Operations {
 	}
 	//should probably store the configuration/log files here?
 
-	shared string opIndex(string path) {
-		return cast(string)files[path].buf;
+	@property
+	shared Variant opIndex(string path) 
+	in {
+		assert(path in files, "Path did not exist in the array");
+	}
+	do {
+		import std.bitmanip : read;
+		Variant ret = 0;
+
+		ubyte[] _buf = cast(ubyte[])(files[path].buf).dup;
+
+		if(_buf.length == 0) { 
+			return ret;
+		}
+
+		switch(files[path].type) {
+			case file_entry.types.typeRaw:
+				ret = files[path].buf;
+				goto default;
+			case file_entry.types.typeBool:
+				ret = _buf.read!bool();
+				goto default;
+			case file_entry.types.typeFloat:
+				ret = _buf.read!float(); 
+				goto default;
+			case file_entry.types.typeInt: 
+				ret = _buf.read!int();
+				goto default;
+			case file_entry.types.typeInt64:
+				ret = _buf.read!long();
+				goto default;
+			case file_entry.types.typeString:
+				ret = cast(string)_buf;
+				goto default;
+			default:
+				return ret;
+		}
+		
+		
 	}
 
-	shared string opIndexAssign(string dat, string path) {
-		files[path].buf = cast(shared(ubyte[]))dat.dup;
+	import std.stdio : writeln;
+	@property
+	shared Variant opIndexAssign(Variant dat, string path) 
+	in {
+		assert(path in files, "Path did not exist in the array");
+		file_entry.types expectedType;
+		if(dat.type == typeid(ubyte[])) {
+			expectedType = file_entry.types.typeRaw;
+		}
+		else if(dat.type == typeid(float)) {
+			expectedType = file_entry.types.typeFloat;
+		}
+		else if(dat.type == typeid(int)) {
+			expectedType = file_entry.types.typeInt;
+		}
+		else if(dat.type == typeid(bool)) {
+			expectedType = file_entry.types.typeBool;
+		}
+		else if(dat.type == typeid(long)) {
+			expectedType = file_entry.types.typeInt64;
+		}
+		else if(dat.type == typeid(string)) {
+			expectedType = file_entry.types.typeString;
+		}
+
+		writeln(files[path].type);
+		writeln(expectedType);
+
+		assert(files[path].type == expectedType, "Requested write did not match the file type.");
+	}
+	do
+	{
+		import std.bitmanip : write;
+		ubyte[] _buf;
+		try {
+		if(dat.type == typeid(ubyte[])) {
+			auto data = dat.get!(ubyte[]);
+			_buf.length = data.length;
+			files[path].buf = cast(shared(ubyte[]))data.dup; 
+			return dat;
+		}
+		else if(dat.type == typeid(float)) {
+			auto data = dat.get!(float);
+			_buf.length = float.sizeof;
+			_buf.write!float(data, 0);
+		}
+		else if(dat.type == typeid(bool)) {
+			auto data = dat.get!(bool);
+			_buf.length = bool.sizeof;
+			_buf.write!bool(data, 0);
+		}
+		else if(dat.type == typeid(long)) {
+			auto data = dat.get!(long);
+			_buf.length = long.sizeof;
+			_buf.write!long(data, 0);
+		}
+		else if(dat.type == typeid(int)) {
+			auto data = dat.get!(int);
+			_buf.length = int.sizeof;
+			_buf.write!int(data, 0);
+		}
+		else if(dat.type == typeid(string)) {
+			auto data = dat.get!(string);
+			_buf.length = data.length;
+			files[path].buf = cast(shared(ubyte[]))data.dup;
+			return dat;
+		}
+		} catch(Exception e) {
+			writeln("exception");
+			writeln(e.msg);
+		}
+
+		files[path].buf = cast(shared(ubyte[]))_buf.dup;
 		return dat;
 	}
 		
@@ -131,7 +261,7 @@ class ResourceStorage : Operations {
 				return;
 			}
 		}
-		throw new FuseException(errno.ENOENT);
+		throw new FuseException(ENOENT);
 	}
 
 	override string[] readdir(const(char)[] path) {
@@ -157,7 +287,7 @@ class ResourceStorage : Operations {
 				files[path].buf.length = length;
 			}
 			else {
-				throw new FuseException(errno.EACCES);
+				throw new FuseException(EACCES);
 			}
 		}
 	}
@@ -173,7 +303,7 @@ class ResourceStorage : Operations {
 			}
 
 			if(!file.writable) {
-				throw new FuseException(errno.EACCES);
+				throw new FuseException(EACCES);
 			}
 			ubyte[] range;
 
@@ -215,7 +345,7 @@ class ResourceStorage : Operations {
 		if(files.keys.canFind(path.idup)) {
 			ResourceFile file = files[path.idup];
 			if(offset > file.buf.length) {
-				throw new FuseException(errno.EIO);
+				throw new FuseException(EIO);
 			}
 
 			import std.algorithm.mutation : copy;
@@ -237,13 +367,14 @@ class ResourceStorage : Operations {
 
 			return copy_buf.length;
 		}
-		throw new FuseException(errno.EOPNOTSUPP);
+		throw new FuseException(EOPNOTSUPP);
 	}
 
 	void importBak(FilesystemResource[] data) {
 		foreach(f; data) {
 			ResourceFile _f = ResourceFile();
 			_f.buf = f.data.dup;
+			_f.type = cast(file_entry.types)f.type;
 			_f.writable = f.writable;
 			files[f.path] = _f; 
 		}
@@ -258,6 +389,7 @@ class ResourceStorage : Operations {
 			_f.data = file.buf.dup;
 			_f.writable = file.writable;
 			_f.path = k;
+			_f.type = file.type;
 			res ~= _f;
 		}
 		return res;
@@ -269,6 +401,7 @@ class ResourceStorage : Operations {
 			ResourceFile file = files[path];
 			f.data = file.buf.dup;
 			f.writable = file.writable;
+			f.type = file.type;
 			f.path = path;
 		}
 
@@ -285,11 +418,13 @@ class ResourceStorage : Operations {
 		debug writefln("%s", id.uuid);
 		uuid_file.buf = cast(ubyte[])id.uuid.dup ~ '\n';
 		uuid_file.writable = false;
+		uuid_file.type = file_entry.types.typeString;
 		files["uuid"] = uuid_file;
 
 		ResourceFile zone_file = ResourceFile();
 		zone_file.buf = cast(ubyte[])id.zone.zoneId ~ '\n';
 		zone_file.writable = false;
+		zone_file.type = file_entry.types.typeString;
 		files["zone"] = zone_file;
 
 		foreach(c; configurations) {
@@ -304,19 +439,17 @@ class ResourceStorage : Operations {
 				case file_entry.file_types.log:
 					path ~= ".log";
 					break;
+				case file_entry.file_types.raw:
+					break;
 				default:
 					path ~= ".txt";
-					break;
 			}
 
 			ResourceFile fi = ResourceFile();
 
 			fi.buf = c.buf.dup;
-			//make sure to always append a newline..
-			fi.buf ~= '\n';
-//			if(fi.buf[$ - 1] != '\n') {
-//				fi.buf ~= '\n';
-//			}
+			fi.type = c.type;
+
 			fi.writable = c.writable;
 			
 			assert(files.keys.canFind(path) is false, "files[path] should be null!");
@@ -335,17 +468,50 @@ class ResourceStorage : Operations {
 */
 
 shared class Resource {
-	bool deployed = false;
-	Mutex mtx;
-	ResourceIdentifier self;
+	protected {
+		bool deployed = false;
+		Mutex mtx;
+		ResourceIdentifier self;
 
-	DateTime creation_date; 
+		DateTime creation_date; 
+	}
 
-	ResourceStorage storage; //Persistent storage
+	/* 
+	   Persistent storage for variables
+	   Persists even across restarts of the program
+	   Store nothing sensitive in this
+	 */
+	ResourceStorage storage; 
+
+	file_entry[] getFiles() {
+		return null;
+	}
 
 	abstract string getClass(); 
 	abstract string getStatus();
 	abstract bool exportable();
+
+	@property
+	Variant opDispatch(string target)() const {
+
+		Variant ret = 0;
+
+		if(storage != null) {
+			string var = target;
+			foreach(file; getFiles()) {
+				if(file.name == var) {
+					Variant storedFile = storage[var];
+					return storedFile;
+				}
+			}
+		}
+		else {
+			assert(0, "opDispatch called on an object with no storage..");
+		}
+
+		return ret;
+	}
+
 
 	ubyte[] exportResource() {
 		// The MinimalResource struct
@@ -369,8 +535,11 @@ shared class Resource {
 		res.id = self;
 		res.deployed = deployed;
 		res.connections = g_ResourceManager.getConnections(self);  
-		ResourceStorage _storage = cast(ResourceStorage)storage;
-		res.resources = _storage.exportAll();
+		if(storage !is null) {
+			ResourceStorage _storage = cast(ResourceStorage)storage;
+			res.resources = _storage.exportAll();
+		}
+
 		res.resourceClass = getClass();
 
 		return res.serialize();
@@ -390,7 +559,7 @@ shared class Resource {
 
 		import core.thread, core.time;
 
-		auto umount_tid = spawnProcess(["/usr/bin/fusermount", "-u", "-z", path]);
+		auto umount_tid = spawnProcess(["/usr/bin/umount", "-lf", path]);
 		auto umount = tryWait(umount_tid); 
 
 		debug writefln("code: %d", umount.status);
@@ -429,8 +598,13 @@ shared class Resource {
 
 		return true;
 	}
+
 	bool deploy() {
 		/* DANGEROUS */
+		if(deployed) {
+			return false;
+		}
+
 		ResourceStorage st = cast(ResourceStorage)storage;
 		if(!(st is null)) {
 			ResourceIdentifier id = cast(ResourceIdentifier)self;
@@ -528,6 +702,21 @@ class ResourceManager {
 		}	
 	}
 
+	string[] getAllResourceClasses() {
+		return _instanceTable.keys.dup;
+	}
+
+	string[] getAllResources() {
+		return _resources.keys.dup;
+	}
+
+	bool isValidClass(string className) {
+		if(className in _instanceTable) {
+			return true;
+		}
+		return false;
+	}
+
 	void registerClass(string _className, Resource delegate(string) dlg) {
 		assert(!(_className in _instanceTable), "Cannot override delegate for class..");
 
@@ -545,8 +734,11 @@ class ResourceManager {
 
 		r.creation_date = cast(shared(DateTime))DateTime.fromISOExtString(res.creation_time);
 		_connections[res.id.uuid] = res.connections;
-		ResourceStorage _storage = cast(ResourceStorage)r.storage;
-		_storage.importBak(res.resources);
+
+		if(r.storage !is null) {
+			ResourceStorage _storage = cast(ResourceStorage)r.storage;
+			_storage.importBak(res.resources);
+		}
 
 		if(res.deployed) {
 			shared(Resource) _s = cast(shared(Resource))r;
@@ -593,7 +785,6 @@ class ResourceManager {
 	bool destroyResource(ResourceIdentifier id) {
 		if(id.uuid in _resources) {
 			if(id.uuid in _connections) {
-				return false;
 			}
 			shared Resource r = _resources[id.uuid];
 			r.useResource();
@@ -675,12 +866,13 @@ class ResourceManager {
 	void cleanup() {
 		import std.stdio;
 		debug writefln("called to cleanup!");
+		// PROGRAM IS ABOUT TO SHUTDOWN ANYWAYS!
 		foreach(d, k; _resources) {
 			import std.file : write;
 			if(!(k is null)) {
 				if(k.exportable()) {
 					debug writefln("writing out %s", k.self.uuid);
-					write(k.self.uuid ~ ".bak", k.exportResource());
+					write(backupPath ~ "/" ~ k.self.uuid ~ ".bak", k.exportResource());
 				}
 				debug writefln("destroying resource %s", k.self.uuid);
 				assert(k.destroy(), "failed to destroy object");

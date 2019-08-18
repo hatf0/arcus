@@ -10,6 +10,7 @@ import dproto.dproto;
 
 class Kintsugi {
     private {
+	Thread workerProc;
 	string[string] vms;
     }
 
@@ -28,6 +29,8 @@ class Kintsugi {
 		    if(r[1]) {
 
 		    }
+
+		    Thread.sleep(dur!"msecs"(1));
 	    }
     }
 
@@ -36,8 +39,8 @@ class Kintsugi {
     {
 	    log(LogLevel.INFO, "vm server booting");
 
-	    auto thread = new Thread(&workerThread);
-	    thread.isDaemon(true);
-	    thread.start();
+	    workerProc = new Thread(&workerThread);
+	    workerProc.isDaemon(true);
+	    workerProc.start();
     }
 }

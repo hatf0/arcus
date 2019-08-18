@@ -1,6 +1,8 @@
-#!/usr/bin/rdmd
+#!/usr/bin/rdmd --shebang --extra-file=sdhcp.d --extra-file=defines.d 
 import std.stdio;
 import core.sys.posix.unistd : geteuid;
+
+import sdhcp;
 
 /*
    Helper function
@@ -60,7 +62,7 @@ void main(string[] args) {
 	
 		if(_o.status != 0) {
 			exec("brctl", "addbr", "vm_bridge");
-			exec("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", "172.0.0.0/8", "-j", "MASQUERADE");
+		//	exec("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", "172.0.0.0/8", "-j", "MASQUERADE");
 			exec("sysctl", "-w", "net.ipv4.ip_forward=1");
 			//ip addr add 172.0.0.1/24 brd + dev vm_bridge
 		}
@@ -148,8 +150,8 @@ void main(string[] args) {
 		}
 	}
 
-	int[4] ip = [172, 0, 0, 0];
-	for(int a = 0; a < 255; a++) {
+	int[4] ip = [172, 26, 0, 0];
+	for(int a = 26; a < 33; a++) {
 		for(int b = 0; b < 255; b++) {
 			for(int c = 0; c < 255; c += 4) {
 				import std.format;
@@ -182,26 +184,21 @@ done:
 	int[4] ip_gateway = ip.dup;
 	ip[3] += 1;
 
-	//THIS WILL ACTUALLY BE PROPERLY DONE, THIS IS JUST A DIRTY HACK!!
-	int[4] public_ip = [10, 0, 1, 0];
-	for(int c = 1; c < 255; c++) {
-		for(int d = 1; c < 255; c++) {
-			import std.format;
-			string ip_string = format!"%d.%d.%d.%d"(public_ip[0], public_ip[1], c, d);
-				
-			import std.algorithm.searching : canFind;
+	int[4] public_ip;
 
-			if(!bad_ip_list.canFind(ip_string)) {
-				public_ip[2] = c;
-				public_ip[3] = d;
-				goto public_ip_done;
-			}
-			else {
-				writefln("found a bad ip: %s", ip_string);
-			}
+	dhcpclient dhcp = new dhcpclient("wlan0", veth_pair[1], ""); 
+	auto i = dhcp.dhcpRequest();
+	if(i.status) {
+		writeln("got proper address..");
+		auto _ip = i.ip;
+		foreach(_i, v; i.ip.toArray()) {
+			public_ip[_i] = cast(int)v;
 		}
 	}
-public_ip_done:
+	else {
+		writeln("this network namespace was not able to get a proper ip?");
+		return;
+	}
 
 	/* these will have to be executed inside of the container */
 	exec("/usr/bin/ip", "netns","exec", args[1], "ifconfig", veth_pair[0], ipArrayToString(ip) ~ "/30"); 
@@ -237,31 +234,3 @@ public_ip_done:
 
 
 }
-	
-
-/*
-if [ -z $1 ]; then
-	echo "Usage: $0 [netns name]"
-	exit
-fi
-
-if [[ $EUID -ne 0 ]]; then
-	echo "This script must be run as root."
-	exit 1
-fi
-
-NETNS_PATH = "/var/run/netns/$1" 
-if test -f "$NETNS_PATH"; then
-	echo "Your NETNS should not exist."
-	exit 1
-fi
-
-echo "Creating veth pair.."
-NETNS_ETHOUT = "$1_sveth"
-NETNS_ETHIN = "$1_veth" 
-
-*/
-
-
-
-	

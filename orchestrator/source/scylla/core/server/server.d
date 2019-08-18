@@ -64,16 +64,20 @@ class ScyllaServer {
     }
 
     this(string _configPath = "./config.json") {
-        
 
 	ResourceIdentifier logEngine = g_ResourceManager.instantiateResource("LogEngine");
 
 	shared(Resource) _l = g_ResourceManager.getResource(logEngine);
+
 	_l.useResource();
+	{
+		LogEngine l = cast(LogEngine)_l;
+		l.logFile = "scylla.log";
 
-	_l.deploy();
-
+		_l.deploy();
+	}
 	_l.releaseResource();
+
 	log(LogLevel.INFO, "arcus starting up..");
 
 	configPath = _configPath;

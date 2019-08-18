@@ -6,7 +6,8 @@ mixin ProtocolBufferFromString!"
 	message NetworkInterface {
 		string public_ip = 1;
 		string private_ip = 2;
-		SecurityPolicy secpol = 3;
+		string dev_name = 3;
+		SecurityPolicy secpol = 4;
 	}
 
 	enum SecStatus {

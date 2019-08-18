@@ -33,6 +33,15 @@ ALL RESOURCES:
 	as well- we must ensure that resources NEVER destroy their thread loop. it should NEVER occur.
 
 
+IMPORTANT:
+	ResourceStorage IS THE ONLY PERSISTENT FORM OF STORAGE!
+
+DISK:
+	ext4-based
+
+
+TODO: how to optimize the ResourceStorage? avoid storing 4GB+ files in memory.. because that isn't cute
+
 
 
 

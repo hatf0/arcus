@@ -1,3 +1,4 @@
+module sdhcp;
 import std.socket;
 import std.stdio;
 import std.string;
@@ -209,9 +210,11 @@ public:
 		dsin_addr ip;
 		dsin_addr gateway;
 		dsin_addr mask;
+
+		DHCPInfo d;
 		while(run) {
 		dhcpsend(DHCPdiscover, Broadcast); 
-		receive(
+		receiveTimeout(dur!"msecs"(100),
 			(Variant v) {
 				assert(v.convertsTo!(Tuple!(ubyte, ubyte[300]))());
 
@@ -254,6 +257,11 @@ public:
 					writeln("lease: ", lease);
 					status = true;
 					send(recvThread, false);
+					d.status = status;
+					d.ip = ip;
+					d.gateway = gateway;
+					d.mask = mask;
+
 					run = false;
 				}
 
@@ -269,13 +277,6 @@ public:
 		);
 		}
 
-
-				
-		DHCPInfo d;
-		d.status = status;
-		d.ip = ip;
-		d.gateway = gateway;
-		d.mask = mask;
 		return d;
 
 	}
@@ -385,12 +386,13 @@ void setInterfaceIP(string iface, dsin_addr[3] _ip) {
 	sock.close();
 }
 
+/*
+
 void main(string[] args) {
 	import std.getopt;
 	string bindIface = "wlan0";
 	string iface = "wlan0";
 	string hostname = "";
-
 
 	auto helpInformation = getopt(
 			args,
@@ -414,3 +416,5 @@ void main(string[] args) {
 		writeln("iface external ip: ", i.ip);
 	}
 }
+
+*/
