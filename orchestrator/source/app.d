@@ -13,18 +13,8 @@ void main()
     uid_t ruid = getuid();
 
     assert(ruid == 0, "scylla must be run as root");
-    import std.file;
 
-    /* Ensure that a 'kvm' group actually exists */
-    auto n = slurp!(string, string, int, string)("/etc/group", "%s:%s:%d:%s");
-    bool kvmGroup = false;
-    foreach(k; n) {
-        if(k[0] == "kvm") {
-            kvmGroup = true;
-            break;
-        }
-    }
-    assert(kvmGroup, "expected kvm group to exist");
+    import std.file;
 
     import core.sys.posix.sys.stat, std.conv, std.string;
     if(!exists("/etc/scylla")) {
@@ -51,15 +41,15 @@ void main()
      */
 
     g_ResourceManager = new ResourceManager();
-    mixin ResourceInjector!("LogEngine", "scylla.core.logger");
-    mixin ResourceInjector!("FirecrackerVm", "scylla.core.instance.firecracker"); 
-    mixin ResourceInjector!("FirecrackerDrive", "scylla.core.instance.firecracker");
+    mixin ResourceInjector!("LogEngine", "bap.core.logger");
+
     foreach (string name; dirEntries(backupPath, SpanMode.shallow)) {
 	    import std.path : buildPath;
 	    ubyte[] data = cast(ubyte[])read(buildPath(backupPath, name));
 	    g_ResourceManager.instantiateFromBackup(data);
 	    remove(buildPath(backupPath, name));
     }
+
     ScyllaServer s = new ScyllaServer("/etc/scylla/config.json");
 
     s.startListener();

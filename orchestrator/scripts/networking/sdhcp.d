@@ -386,7 +386,6 @@ void setInterfaceIP(string iface, dsin_addr[3] _ip) {
 	sock.close();
 }
 
-/*
 
 void main(string[] args) {
 	import std.getopt;
@@ -417,4 +416,3 @@ void main(string[] args) {
 	}
 }
 
-*/

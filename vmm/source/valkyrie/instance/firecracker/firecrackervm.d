@@ -9,19 +9,7 @@ import core.sys.posix.signal;
 import std.concurrency;
 import bap.core.resource_manager;
 
-shared class FirecrackerVmSingleton : ResourceSingleton {
-	override Resource instantiate(string data) {
-		shared(FirecrackerVm) res = new shared(FirecrackerVm)(data);
-		return cast(Resource)res;
-
-	}
-
-	this() {
-		mtx = new shared(Mutex)();
-	}
-}
-
-static shared(FirecrackerVmSingleton) g_FirecrackerVmSingleton;
+mixin OneInstanceSingleton!("FirecrackerVm");
 
 shared class FirecrackerVm : Resource {
 	private {
@@ -110,7 +98,7 @@ shared class FirecrackerVm : Resource {
 
 	this(string data) {
 		import bap.core.utils;
-		self = id("example", data); 
+		self = idSelf(data); 
 		storage = cast(shared(ResourceStorage))new ResourceStorage(cast(file_entry[])files, self);
 		mtx = new shared(Mutex)();
 	}

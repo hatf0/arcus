@@ -1,6 +1,7 @@
 beautiful-admin-panel
 bin/
 dub.selections.json
+scylla.log
 .dub
 *.o
 *.obj

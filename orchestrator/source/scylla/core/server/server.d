@@ -25,11 +25,10 @@ class ScyllaServer {
     };
 
     void loadConfig(string path = "./config.json") {
-        import std.file, std.json, jsonizer;
+        import std.file, std.json;
         if(exists(path)) {
             string c = cast(string)read(path);
-            JSONValue _c = parseJSON(c);
-            serverConfig = fromJSON!ScyllaConfig(_c);
+	    serverConfig = c.deserialize!ScyllaConfig();
 	    log(LogLevel.INFO, "loaded arcus config from " ~ path);
         }
         else {
@@ -53,14 +52,29 @@ class ScyllaServer {
     }
 
     void startListener() {
-        if(serverConfig.onboarded) {
+        if(serverConfig.redisHost != "") {
             db = new RedisDatabaseDriver(serverConfig.redisHost, serverConfig.redisPort);
         //    keyStore = db.getClient().getDatabase(4); 
         }
-        else {
-		log(LogLevel.INFO, "please onboard the orchestrator");
-        }
 
+    }
+
+    void validateConfig() {
+	    if(serverConfig.redisHost == "") {
+		    log(LogLevel.ERROR, "redis host is blank. Please fill in.");
+	    }
+
+	    if(serverConfig.vpsStoragePath == "") {
+		    log(LogLevel.INFO, "storage path is blank, assuming typical location");
+	    }
+
+	    if(serverConfig.vpsImagePath == "") {
+		    log(LogLevel.INFO, "image path is blank, assuming typical location");
+	    }
+
+	    if(serverConfig.listenAddress == "") {
+		    log(LogLevel.INFO, "listen address is blank, assuming listen on all addresses");
+	    }
     }
 
     this(string _configPath = "./config.json") {
@@ -86,8 +100,10 @@ class ScyllaServer {
 
 	root = new RootDriver();
         vmServer = new Kintsugi();
+	import vibe.core.core : lowerPrivileges;
 
-	//resourceMgr.registerClass("NIC", &NICResource.instantiate());
+	
+	lowerPrivileges("nobody", "kvm");
     }
 
     

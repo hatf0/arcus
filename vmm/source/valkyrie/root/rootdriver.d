@@ -1,12 +1,11 @@
-module scylla.core.root.rootdriver;
+module valkyrie.root.rootdriver;
 import std.algorithm.searching;
 import core.thread;
 import core.time;
 import dproto.dproto;
 import zmqd;
-import scylla.models.rootdriver;
-import scylla.core.utils;
-import scylla.models.nic;
+import bap.core.utils;
+import valkyrie.models.nic;
 
 void exec(string...)(string args) {
 	import std.process;
@@ -33,17 +32,22 @@ class RootDriver {
 			return false;
 		}
 
+		bool dhcpRequest(string bindIface) {
+			return false;
+		}
+
 		bool assignNICProperties(string nic, string ip, string mac) {
 			return false;
 		}
 
-		bool assignNICToBridge(string bridge, string nic) {
+		bool addNSGInRule(SecurityInPolicy pol) {
 			return false;
 		}
 
-		bool updateNICNetworkRules(string nic, SecurityPolicy secpol) {
+		bool addNSGOutRule(SecurityOutPolicy pol) {
 			return false;
 		}
+
 
 	public:
 		static void eventHandler() {
@@ -56,7 +60,7 @@ class RootDriver {
 				auto frame = Frame();
 				auto r = broker.tryReceive(frame);
 				if(r[1]) {
-					RootDriverEvt evt = RootDriverEvt(frame.data);
+//					RootDriverEvt evt = RootDriverEvt(frame.data);
 
 					log(LogLevel.DEBUG, "rootdriver received frame");
 				}

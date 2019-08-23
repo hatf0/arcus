@@ -3,18 +3,7 @@ import std.stdio;
 import firecracker_d.core.client;
 import bap.core.resource_manager;
 
-shared class FirecrackerDriveSingleton : ResourceSingleton {
-	override Resource instantiate(string data) {
-		shared(FirecrackerDrive) res = new shared(FirecrackerDrive)(data);
-		return cast(Resource)res;
-	}
-
-	this() {
-		mtx = new shared(Mutex)();
-	}
-}
-
-static shared(FirecrackerDriveSingleton) g_FirecrackerDriveSingleton;
+mixin OneInstanceSingleton!("FirecrackerDrive");
 
 shared class FirecrackerDrive : OneConnectionResource {
 	private {
@@ -80,8 +69,8 @@ shared class FirecrackerDrive : OneConnectionResource {
 
 	this(string data) {
 		import bap.core.utils;
-		self = id("example", data);
-		storage = cast(shared(ResourceStorage)) new ResourceStorage(cast(file_entry[])files, id("example", data));
+		self = idSelf(data);
+		storage = cast(shared(ResourceStorage)) new ResourceStorage(cast(file_entry[])files, idSelf(data));
 	}
 
 }

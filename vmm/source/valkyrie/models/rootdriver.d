@@ -1,6 +1,6 @@
-module scylla.models.rootdriver;
-import scylla.core.utils;
-import scylla.models.nic;
+module valkyrie.models.rootdriver;
+import valkyrie.models.nic;
+import bap.core.utils;
 
 mixin ProtocolBufferFromString!"
 	enum Events {
