@@ -1,7 +1,7 @@
 #!/bin/bash
 
 dfmt \
-	--end_of_line=crlf \
+	--end_of_line=lf \
 	--indent_style=tab \
     	--brace_style=otbs \
      	--align_switch_statements=true \
