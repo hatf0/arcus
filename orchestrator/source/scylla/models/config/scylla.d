@@ -3,8 +3,8 @@ import std.stdio;
 import std.file;
 import asdf;
 
-struct ScyllaConfig {
-    @serializationKeys("comm_key") string communicationKey;
+struct ScyllaConfig
+{
     @serializationKeys("redis_host") string redisHost;
     @serializationKeys("redis_port") ushort redisPort;
     @serializationKeys("redis_password") string redisPassword;
@@ -13,10 +13,12 @@ struct ScyllaConfig {
     @serializationKeys("listen_port") ushort port;
     @serializationKeys("listen_address") string listenAddress;
 
-    string stringify() {
-	    with(asdf) {
-		    return this.serializeToJson();
-	    }
+    string stringify()
+    {
+        with (asdf)
+        {
+            return this.serializeToJson();
+        }
     }
 
 }

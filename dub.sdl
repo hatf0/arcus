@@ -1,58 +1,46 @@
 name "arcus"
 description "Functional full-stack admin panel."
 homepage "https://www.0xcc.pw"
-
-license "MIT"
-copyright "Copyright © 2018-2018 @hatf0"
 authors "hatf0"
-
-subPackage "library" 
-
-targetPath "./bin"
-
-dependency "vibe-d" version="~>0.8.4"
-dependency "vibe-d:tls" version="*"
-subConfiguration "vibe-d:tls" "notls"
-
-dependency "firecracker_d" version="~>0.0.13"
-dependency "asdf" version="~>0.5.0"
-dependency "dauth" version="~>0.6.4"
-dependency "library" version="*"
-dependency "requests" version="~>1.0.5-fixssl"
+copyright "Copyright © 2018-2018 @hatf0"
+license "MIT"
 dependency "dproto" version="~master"
+dependency "dauth" version="~>0.6.4"
+dependency "requests" version=">=1.0.5-fixssl <1.1.0-0"
+dependency "vibe-d" version="~>0.8.4"
+dependency "firecracker_d" version="~>0.0.13"
 dependency "dfuse" version="~>0.3.1"
+dependency "asdf" version="~>0.5.0"
+dependency "library" version=">=0.0.0"
 dependency "zmqd" version="~>1.1.1"
-
+targetPath "./bin"
 configuration "cli" {
-    targetType "executable"
-    targetName "cli"
-    sourcePaths "cli"
+	targetType "executable"
+	targetName "cli"
+	sourcePaths "cli"
 }
-
 configuration "orchestrator" {
-    targetType "executable"
-    targetName "orchestrator"
-    excludedSourceFiles "*scripts/*"
-    sourcePaths "orchestrator"
-    dflags "-g"
-    dependency "hasdata" version="~>1.1.0"
+	dependency "hasdata" version="~>1.1.0"
+	targetType "executable"
+	targetName "orchestrator"
+	dflags "-g"
+	sourcePaths "orchestrator"
+	excludedSourceFiles "*scripts/*"
 }
-
 configuration "vmm" {
-    targetType "executable"
-    targetName "vmm"
-    sourcePaths "vmm"
+	targetType "executable"
+	targetName "vmm"
+	sourcePaths "vmm"
 }
-
 configuration "web" {
-    targetType "executable"
-    targetName "web"
-    sourcePaths "web"
-    stringImportPaths "web/views"
+	targetType "executable"
+	targetName "web"
+	sourcePaths "web"
+	stringImportPaths "web/views"
 }
-
 configuration "api" {
-    targetType "executable"
-    targetName "api"
-    sourcePaths "api"
+	targetType "executable"
+	targetName "api"
+	sourcePaths "api"
 }
+subPackage "library"

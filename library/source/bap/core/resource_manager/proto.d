@@ -35,4 +35,3 @@ mixin ProtocolBufferFromString!"
 	}
 
 ";
-

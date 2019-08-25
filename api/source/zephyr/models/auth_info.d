@@ -1,7 +1,8 @@
 module zephyr.models.auth_info;
 import zephyr.models.base;
 
-struct AuthInfo {
+struct AuthInfo
+{
     mixin BaseModel;
     @serializationKeys("user")
     string user;
@@ -9,4 +10,3 @@ struct AuthInfo {
     @serializationKeys("scope")
     string[] scopes;
 }
-

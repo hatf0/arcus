@@ -3,13 +3,14 @@ import zephyr.models.base;
 import firecracker_d.models.drive;
 
 //node=local&hostname=test&vcpu_count=2&ram_size=1&disk_size=15&disk_template=ubuntu&user=hatf0"
-struct VPSTarget {
+struct VPSTarget
+{
     mixin BaseModel;
 
     @serializationKeys("node_name") string node;
 
     @serializationKeys("hostname") string hostname;
-    
+
     @serializationKeys("vcpu_count") ulong cpuCount;
 
     @serializationKeys("ram_size") ulong ramSize;
@@ -22,5 +23,3 @@ struct VPSTarget {
 
     @serializationKeys("target_user") string targetUser;
 }
-
-

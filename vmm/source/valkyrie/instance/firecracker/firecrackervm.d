@@ -1,5 +1,6 @@
-module scylla.core.instance.firecracker.firecrackervm;
+module valkyrie.instance.firecracker.firecrackervm;
 import std.stdio;
+
 //import firecracker_d.models.client_models;
 import firecracker_d.core.client;
 import bap.models.vps;
@@ -9,104 +10,113 @@ import core.sys.posix.signal;
 import std.concurrency;
 import bap.core.resource_manager;
 
-mixin OneInstanceSingleton!("FirecrackerVm");
+mixin MultiInstanceSingleton!("FirecrackerVm");
 
-shared class FirecrackerVm : Resource {
-	private {
-		VPS __template;
-		string __id;
-		string __socket;
-		bool __init = false;
-		string __logPath;
-		string __metricsPath;
-		FirecrackerAPIClient __client;
-//		ProcessPipes __vmPipes;
-	}
+final shared class FirecrackerVm : Resource
+{
+    private
+    {
+        string __id;
+        string __socket;
+        bool __init = false;
+        string __logPath;
+        string __metricsPath;
+        FirecrackerAPIClient __client;
+        //		ProcessPipes __vmPipes;
+    }
 
-	file_entry[] files = [
-	{
-		writable: false,
-		name: "cpus",
-		file_type: file_entry.file_types.raw,
-		type: file_entry.types.typeInt
-	},
-	{
-		writable: false,
-		name: "ram",
-		file_type: file_entry.file_types.raw,
-		type: file_entry.types.typeInt64
-	},
-	{
-		writable: false,
-		name: "namespace",
-		file_type: file_entry.file_types.raw,
-		type: file_entry.types.typeString
-	},
-	{
-		writable: false,
-		name: "ht_enabled",
-		file_type: file_entry.file_types.raw,
-		type: file_entry.types.typeBool
-	}
-	];
+    file_entry[] files = [
+        {
+        writable:
+            true, name : "cpus", file_type : file_entry.file_types.raw,
+        type : file_entry.types.typeInt
+        },
+        {
+        writable:
+            true, name : "ram", file_type : file_entry.file_types.raw, type
+                : file_entry.types.typeInt64
+        },
+        {
+        writable:
+            false, //set on creation, NIC must match (be in same namespace)
+        name : "namespace", file_type : file_entry.file_types.raw,
+        type : file_entry.types.typeString
+        },
+        {
+        writable:
+            false, //managed by the server owner
+        name : "ht_enabled", file_type : file_entry.file_types.raw,
+        type : file_entry.types.typeBool
+        }
+    ];
 
-	override file_entry[] getFiles() {
-		return cast(file_entry[])files;
-	}
+    override file_entry[] getFiles()
+    {
+        return cast(file_entry[]) files;
+    }
 
-	@property string socketPath() {
-		return __socket.idup;
-	}
+    @property string socketPath()
+    {
+        return __socket.idup;
+    }
 
-	override bool exportable() {
-		return true;
-	}
+    override bool exportable()
+    {
+        return true;
+    }
 
-	override string getClass() {
-		return "FirecrackerVm";
-	}
+    override string getClass()
+    {
+        return "FirecrackerVm";
+    }
 
-	override string getStatus() {
-		if(__init) {
-			return "OK";
-		}
-		
-		return "NOINIT";
-	}
+    override string getStatus()
+    {
+        if (__init)
+        {
+            return "OK";
+        }
 
-	override bool destroy() {
-		return super.destroy();
-	}
+        return "NOINIT";
+    }
 
-	override bool deploy() {
-		return super.deploy();
-	}
+    override bool destroy()
+    {
+        return super.destroy();
+    }
 
-	override bool connect(ResourceIdentifier id) {
-		super.connect(id);
-		return true;
-	}
+    override bool deploy()
+    {
+        return super.deploy();
+    }
 
-	override bool disconnect(ResourceIdentifier id) {
-		return true;
-	}
+    override bool connect(ResourceIdentifier id)
+    {
+        return super.connect(id);
+    }
 
-	override bool canDisconnect(ResourceIdentifier id) {
-		return true;
-	}
+    override bool disconnect(ResourceIdentifier id)
+    {
+        return true;
+    }
 
+    override bool canDisconnect(ResourceIdentifier id)
+    {
+        return true;
+    }
 
-	this(string data) {
-		import bap.core.utils;
-		self = idSelf(data); 
-		storage = cast(shared(ResourceStorage))new ResourceStorage(cast(file_entry[])files, self);
-		mtx = new shared(Mutex)();
-	}
+    this(string data)
+    {
+        import bap.core.utils;
+
+        self = idSelf(data);
+        storage = cast(shared(ResourceStorage)) new ResourceStorage(cast(file_entry[]) files, self);
+        mtx = new shared(Mutex)();
+    }
 
 }
 
-
-	/*
+/*
 
 
 class FirecrackerVM {

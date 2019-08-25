@@ -1,7 +1,8 @@
 module zephyr.models.node_target;
 import zephyr.models.base;
 
-struct NodeTarget {
+struct NodeTarget
+{
     mixin BaseModel;
 
     @serializationKeys("ip_address") string ipAddress;

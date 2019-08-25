@@ -1,6 +1,6 @@
 module scylla.models.kintsugi;
 import dproto.dproto;
-import scylla.core.utils;
+import bap.core.utils;
 
 mixin ProtocolBufferFromString!"
 	

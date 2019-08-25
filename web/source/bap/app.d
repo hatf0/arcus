@@ -5,27 +5,29 @@ import bap.model;
 import bap.core.server;
 import bap.server;
 
-void main() {
+void main()
+{
     Server s = new BAPServer();
 
     Sidebar[] entries;
     entries ~= Sidebar("mdi mdi-view-dashboard", "./dashboard", "Dashboard");
-    s.registerSidebar("General", "Overview", "fa-television", entries); 
+    s.registerSidebar("General", "Overview", "fa-television", entries);
 
     Sidebar[] vpsManagement;
     vpsManagement ~= Sidebar("mdi mdi-view-dashboard", "./dashboard", "Dashboard");
     vpsManagement ~= Sidebar("mdi mdi-harddisk", "./disks", "Disks");
     vpsManagement ~= Sidebar("mdi mdi-server-network", "./network", "Network");
-    vpsManagement ~= Sidebar("mdi mdi-refresh", "./redeploy", "Redeploy");  
+    vpsManagement ~= Sidebar("mdi mdi-refresh", "./redeploy", "Redeploy");
     vpsManagement ~= Sidebar("mdi mdi-settings", "./advanced", "Advanced");
-    s.registerSidebar("Management", "VPS", "fa-server", vpsManagement); 
+    s.registerSidebar("Management", "VPS", "fa-server", vpsManagement);
 
     Sidebar[] support;
     support ~= Sidebar("mdi mdi-account-question", "/", "Live Chat");
     support ~= Sidebar("mdi mdi-help-circle", "/", "Knowledgebase");
     s.registerSidebar("Resources", "Support", "mdi mdi-lifebuoy", support);
 
-    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white, Widget.colors.none, `
+    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white,
+            Widget.colors.none, `
                 <script src="/static/ws_alt.js"></script>
                 <div class="box-header with-border">
                     <h3 class="box-title">Kernel Log</h3>
@@ -33,16 +35,21 @@ void main() {
                 <div class="box-body">
                     <div class="direct-chat-messages" id="messages">
                     </div>
-                </div>`, "", "")); 
+                </div>`, "", ""));
 
-    s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white, Widget.colors.yellow, `
+    s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white,
+            Widget.colors.yellow, `
                 <span class="info-box-text">Status</span>
-                <span class="info-box-number" id="info-widget-text">UNKNOWN</span>`, "fa fa-power-off", "info-widget"));
-    s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white, Widget.colors.aqua, `
+                <span class="info-box-number" id="info-widget-text">UNKNOWN</span>`,
+            "fa fa-power-off", "info-widget"));
+    s.registerVPSWidget(Widget("info", 3, 3, 3, 3, Widget.colors.white,
+            Widget.colors.aqua, `
                 <span class="info-box-text">IP Address</span>
-                <span class="info-box-number" id="ip-address">172.16.1.1</span>`, "mdi mdi-server-network", "info-widget-2"));
+                <span class="info-box-number" id="ip-address">172.16.1.1</span>`,
+            "mdi mdi-server-network", "info-widget-2"));
 
-    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white, Widget.colors.aqua, `
+    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white,
+            Widget.colors.aqua, `
           <div class="box box-primary">     
             <div class="box-header with-border">
               <h3>Quick Actions</h3>
@@ -64,7 +71,8 @@ void main() {
                 
    `, "", "quick-actions"));
 
-    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white, Widget.colors.none, `
+    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white,
+            Widget.colors.none, `
                 <div class="box-header with-border">
                     <h3 class="box-title">CPU Usage</h3>
                 </div>
@@ -73,9 +81,10 @@ void main() {
                         <canvas id="cpuUsage" style="height: 250px; width: 792px;" width="1584" height="500">
                         </canvas>
                     </div>
-                </div>`, "", "")); 
+                </div>`, "", ""));
 
-    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white, Widget.colors.none, `
+    s.registerVPSWidget(Widget("info", 6, 6, 6, 6, Widget.colors.white,
+            Widget.colors.none, `
                 <div class="box-header with-border">
                     <h3 class="box-title">Network Throughput</h3>
                 </div>
@@ -85,14 +94,14 @@ void main() {
                         </canvas>
                     </div>
                     <script src="/static/vm-graphing.js"></script>
-                </div>`, "", "")); 
+                </div>`, "", ""));
     Sidebar[] adminVMs;
     adminVMs ~= Sidebar("mdi mdi-server", "/admin/vms", "Overview");
     s.registerSidebar("Admin", "VPS", "fa-server", adminVMs);
 
     Sidebar[] adminNodes;
     adminNodes ~= Sidebar("mdi mdi-server", "/admin/nodes", "Overview");
-    s.registerSidebar("Admin", "Node", "fa-server", adminNodes); 
+    s.registerSidebar("Admin", "Node", "fa-server", adminNodes);
 
     Sidebar[] adminUsers;
     adminUsers ~= Sidebar("mdi mdi-account-settings", "/admin/users", "Overview");
@@ -107,7 +116,5 @@ void main() {
 
     s.registerSidebar("Admin", "Settings", "fa-cogs", adminConfig);
 
-
-    
     runApplication();
 }

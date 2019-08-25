@@ -36,10 +36,9 @@ mixin ProtocolBufferFromString!"
 	}
 ";
 
-struct IPInfo {
-        string macAddress;
-        string mainIP;
-        string gatewayIP;
+struct IPInfo
+{
+    string macAddress;
+    string mainIP;
+    string gatewayIP;
 };
-
-

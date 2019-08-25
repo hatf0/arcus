@@ -12,15 +12,7 @@
 		"dproto": "~master",
 		"eventcore": "0.8.45",
 		"firecracker_d": "0.0.13",
-		"grpc": "0.2.0",
 		"hasdata": "1.1.0",
-		"hunt": "1.1.2",
-		"hunt-http": "0.1.4",
-		"hunt-imf": "0.0.7",
-		"hunt-net": "0.1.0",
-		"hunt-security": "0.1.0",
-		"hunt-trace": "0.1.9",
-		"jsonizer": "0.7.6",
 		"libasync": "0.8.4",
 		"libevent": "2.0.2+2.0.16",
 		"library": "~master",
@@ -34,6 +26,7 @@
 		"taggedalgebraic": "0.11.4",
 		"vibe-core": "1.6.2",
 		"vibe-d": "0.8.5",
+		"vibe-d:tls": "0.8.5",
 		"zeromq": "4.2.2",
 		"zmqd": "1.1.1"
 	}

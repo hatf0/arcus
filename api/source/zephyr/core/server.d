@@ -11,15 +11,21 @@ import zephyr.models.node_target;
 import zephyr.models.user_target;
 import zephyr.models.vps_target;
 
-mixin template GrabEvent(T) {
+mixin template GrabEvent(T)
+{
     T e;
     auto _eventGrabber = () @trusted {
-        try {
+        try
+        {
             e = deserialize!T(data);
-        } catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             logError("exception: %s", e.msg);
             return "no";
-        } catch(AssertError e) {
+        }
+        catch (AssertError e)
+        {
             logError("%s", e.msg);
             return "no";
         }
@@ -27,8 +33,10 @@ mixin template GrabEvent(T) {
     }();
 }
 
-class ZephyrServer {
-    private {
+class ZephyrServer
+{
+    private
+    {
         HTTPListener listener;
         RedisDatabaseDriver _db;
         RedisDatabase apiKeyStore;
@@ -36,76 +44,97 @@ class ZephyrServer {
         string configPath;
     }
 
-    bool canFindAPIKey(string apiKey) nothrow {
-        try {
-            if(apiKeyStore.exists(apiKey)) {
+    bool canFindAPIKey(string apiKey) nothrow
+    {
+        try
+        {
+            if (apiKeyStore.exists(apiKey))
+            {
                 return true;
             }
-        } catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             logError("caught an exception while trying to find API key: %s", e.msg);
         }
         return false;
     }
 
-    User pullFromAPIKey(string apiKey) nothrow {
-        if(canFindAPIKey(apiKey)) {
-            try {
+    User pullFromAPIKey(string apiKey) nothrow
+    {
+        if (canFindAPIKey(apiKey))
+        {
+            try
+            {
                 string keyJSON = apiKeyStore.request!string("json.get", apiKey);
 
                 AuthInfo r = keyJSON.deserialize!AuthInfo();
 
-                auto u = _db.getUser(r.user); 
+                auto u = _db.getUser(r.user);
 
-                if(!u.isNull) {
+                if (!u.isNull)
+                {
                     return u;
                 }
-                else {
+                else
+                {
                     assert(0, "user was null????");
                 }
-            } catch(Exception e) {
+            }
+            catch (Exception e)
+            {
                 assert(0, e.msg);
             }
         }
-        else {
+        else
+        {
             assert(0, "could not find api key");
         }
     }
 
-
     import bap.core.node;
-    class ZephyrREST : ServerREST {
+
+    class ZephyrREST : ServerREST
+    {
         @path("/api/v1/admin/node/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postAdminNodeAction(string api_key, string data, string _action)
-        {    
-            if(!canFindAPIKey(api_key)) {
+        nothrow string postAdminNodeAction(string api_key, string data, string _action)
+        {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.admin) {
+            if (!requester.admin)
+            {
                 return "NO_PERMS";
             }
 
             mixin GrabEvent!(NodeTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
-            if(_action == "delete") {
-                if(e.hostname == "") {
+            if (_action == "delete")
+            {
+                if (e.hostname == "")
+                {
                     return "BLANK_HOST";
                 }
-                else {
+                else
+                {
                     auto _n = _db.getNode(e.hostname);
 
-                    if(!_n.isNull) {
+                    if (!_n.isNull)
+                    {
                         Node n = _n;
 
-                        foreach(vps; n.deployedVPS) {
+                        foreach (vps; n.deployedVPS)
+                        {
                             logInfo("delete vps %d", vps);
                         }
 
@@ -114,17 +143,21 @@ class ZephyrServer {
                     }
                 }
             }
-            else if(_action == "create") {
+            else if (_action == "create")
+            {
                 Node n;
-                if(e.hostname == "") {
+                if (e.hostname == "")
+                {
                     return "BLANK_HOST";
                 }
 
-                if(e.port == 0) {
+                if (e.port == 0)
+                {
                     return "BLANK_PORT";
                 }
 
-                if(e.ipAddress == "") {
+                if (e.ipAddress == "")
+                {
                     return "BLANK_IP";
                 }
 
@@ -137,28 +170,30 @@ class ZephyrServer {
                 return "OK";
             }
 
-
             return "UNIMPLEMENTED";
-        
-        } 
+
+        }
 
         @path("/api/v1/admin/node/:target/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postAdminNodeTarget(string api_key, string data, string _target, string _action)
+        nothrow string postAdminNodeTarget(string api_key, string data,
+                string _target, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.admin) {
+            if (!requester.admin)
+            {
                 return "NO_PERMS";
             }
             mixin GrabEvent!(NodeTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
@@ -168,39 +203,46 @@ class ZephyrServer {
 
         @path("/api/v1/admin/user/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postAdminUserAction(string api_key, string data, string _action)
+        nothrow string postAdminUserAction(string api_key, string data, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.admin) {
+            if (!requester.admin)
+            {
                 return "NO_PERMS";
             }
 
             mixin GrabEvent!(UserTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
-            if(_action == "create") {
-                if(e.username == "") {
+            if (_action == "create")
+            {
+                if (e.username == "")
+                {
                     return "BLANK_USERNAME";
                 }
 
-                if(e.email == "") {
+                if (e.email == "")
+                {
                     return "BLANK_EMAIL";
                 }
 
-                if(e.realName == "") {
+                if (e.realName == "")
+                {
                     return "BLANK_NAME";
                 }
 
-                if(e.picture == "") {
+                if (e.picture == "")
+                {
                     return "BLANK_PICTURE";
                 }
 
@@ -213,57 +255,68 @@ class ZephyrServer {
                 newUser.resetPassword = true;
 
                 auto t = _db.getUser(e.username);
-                if(t.isNull) {
+                if (t.isNull)
+                {
                     _db.insertUser(newUser);
                     return "OK";
-                } 
-                else {
+                }
+                else
+                {
                     return "DUPLICATE_USERNAME";
                 }
 
-
             }
-            else if(_action == "delete") {
-                if(e.username == "") {
+            else if (_action == "delete")
+            {
+                if (e.username == "")
+                {
                     return "BLANK_USERNAME";
                 }
 
-                if(_db.deleteUser(e.username)) {
+                if (_db.deleteUser(e.username))
+                {
                     return "OK";
                 }
-                else {
+                else
+                {
                     return "ERROR";
                 }
 
             }
-            else if(_action == "update") {
-                if(e.username == "") {
+            else if (_action == "update")
+            {
+                if (e.username == "")
+                {
                     return "BLANK_USERNAME";
                 }
 
                 auto _t = _db.getUser(e.username);
-                if(_t.isNull) {
+                if (_t.isNull)
+                {
                     return "NO_USER";
                 }
 
                 User t = _t;
 
-                if(e.email != "") {
+                if (e.email != "")
+                {
                     t.email = e.email;
                 }
 
-                if(e.realName != "") {
+                if (e.realName != "")
+                {
                     t.name = e.realName;
                 }
 
-                if(e.picture != "") {
+                if (e.picture != "")
+                {
                     t.profilePicURL = e.picture;
                 }
 
                 t.admin = e.admin;
 
                 _db.insertUser(t);
-                
+
                 return "OK";
 
             }
@@ -274,22 +327,25 @@ class ZephyrServer {
 
         @path("/api/v1/admin/user/:target/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postAdminUserTarget(string api_key, string data, string _target, string _action)
+        nothrow string postAdminUserTarget(string api_key, string data,
+                string _target, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.admin) {
+            if (!requester.admin)
+            {
                 return "NO_PERMS";
             }
 
             mixin GrabEvent!(UserTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
@@ -298,42 +354,49 @@ class ZephyrServer {
 
         @path("/api/v1/admin/vps/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postAdminVPSAction(string api_key, string data, string _action)
+        nothrow string postAdminVPSAction(string api_key, string data, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.admin) {
+            if (!requester.admin)
+            {
                 return "NO_PERMS";
             }
 
             mixin GrabEvent!(VPSTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
-            if(_action == "create") {
-                if(e.node == "") {
+            if (_action == "create")
+            {
+                if (e.node == "")
+                {
                     return "BLANK_NODE";
                 }
 
                 auto _n = _db.getNode(e.node);
-                if(_n.isNull) {
+                if (_n.isNull)
+                {
                     return "NO_NODE";
                 }
 
                 Node n = _n;
 
-                if(e.hostname == "") {
+                if (e.hostname == "")
+                {
                     return "BLANK_HOSTNAME";
                 }
 
-                if(e.cpuCount == 0) {
+                if (e.cpuCount == 0)
+                {
                     return "INVALID_CPU";
                 }
 
@@ -341,23 +404,29 @@ class ZephyrServer {
                    Linux needs **AT LEAST** 256 mb of ram
                 */
 
-                if(e.ramSize <= 256) {
+                if (e.ramSize <= 256)
+                {
                     return "INVALID_RAM";
                 }
 
-                if(e.drives.length != e.driveSizes.length) {
+                if (e.drives.length != e.driveSizes.length)
+                {
                     return "INVALID_DISKS";
                 }
 
                 bool atLeastOneRoot = false;
 
-                foreach(i, drive; e.drives) {
-                    if(e.driveSizes[drive.driveID] <= 10) {
+                foreach (i, drive; e.drives)
+                {
+                    if (e.driveSizes[drive.driveID] <= 10)
+                    {
                         return "BAD_DRIVE";
                     }
 
-                    if(drive.isRootDevice) {
-                        if(atLeastOneRoot) {
+                    if (drive.isRootDevice)
+                    {
+                        if (atLeastOneRoot)
+                        {
                             return "BAD_DRIVE";
                         }
 
@@ -366,16 +435,17 @@ class ZephyrServer {
 
                 }
 
-                if(e.diskTemplate == "") {
+                if (e.diskTemplate == "")
+                {
                     return "BLANK_DISK_TEMPLATE";
                 }
 
-                if(e.targetUser == "") {
+                if (e.targetUser == "")
+                {
                     return "BLANK_USER";
                 }
 
                 VPS v;
-
 
                 /*
                     From the disk template, the VPS will have it's root disk path
@@ -384,16 +454,20 @@ class ZephyrServer {
                 */
 
                 import std.uuid;
-                v.state = VPS.State.provisioned; 
+
+                v.state = VPS.State.provisioned;
 
                 v.drives = e.drives;
                 v.driveSizes = e.driveSizes;
                 v.osTemplate = e.diskTemplate;
                 v.name = e.hostname;
                 v.node = e.node;
-                try {
+                try
+                {
                     v.uuid = randomUUID().toString();
-                } catch(Exception e) {
+                }
+                catch (Exception e)
+                {
                     logError("could not generate UUID?");
                     return "UUID_GEN_ERROR";
                 }
@@ -401,14 +475,15 @@ class ZephyrServer {
                 v.config.htEnabled = true;
                 v.config.memSizeMib = e.ramSize;
                 v.config.vcpuCount = e.cpuCount;
-                
-                if(_db.getVPS(v.uuid).isNull) {
+
+                if (_db.getVPS(v.uuid).isNull)
+                {
                     _db.insertVPS(v);
                 }
-                else {
+                else
+                {
                     return "COLLISION";
                 }
-
 
                 return v.uuid;
 
@@ -420,22 +495,25 @@ class ZephyrServer {
 
         @path("/api/v1/admin/vps/:target/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postAdminVPSTarget(string api_key, string data, string _target, string _action)
+        nothrow string postAdminVPSTarget(string api_key, string data,
+                string _target, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.admin) {
+            if (!requester.admin)
+            {
                 return "NO_PERMS";
             }
 
             mixin GrabEvent!(VPSTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
@@ -445,21 +523,24 @@ class ZephyrServer {
 
         @path("/api/v1/user/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postUserAction(string api_key, string data, string _action)
+        nothrow string postUserAction(string api_key, string data, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(_action == "vps_list") {
+            if (_action == "vps_list")
+            {
                 string v = "{'vps_list': [";
 
-                foreach(i, s; requester.servers) {
+                foreach (i, s; requester.servers)
+                {
                     v ~= "'" ~ s ~ "'";
-                    if(i != requester.servers.length - 1) {
+                    if (i != requester.servers.length - 1)
+                    {
                         v ~= ", ";
                     }
                 }
@@ -470,42 +551,53 @@ class ZephyrServer {
 
             mixin GrabEvent!(UserTarget);
 
-            if(_eventGrabber == "no") { 
+            if (_eventGrabber == "no")
+            {
                 return _eventGrabber;
             }
 
-
-            if(_action == "reset_password") {
-                if(e.newPassword == "") {
+            if (_action == "reset_password")
+            {
+                if (e.newPassword == "")
+                {
                     return "BLANK_PASSWORD";
                 }
-                else {
+                else
+                {
                     import dauth;
                     import std.string : replace;
-                    try {
+
+                    try
+                    {
                         Password p = toPassword(e.newPassword.dup);
                         requester.hashedPassword = makeHash(p).toCryptString().replace("/", "^");
                         _db.insertUser(requester);
-                    } catch(Exception e) {
+                    }
+                    catch (Exception e)
+                    {
                         logError("could not set new password");
                         return "NOT_OK";
                     }
 
                     return "OK";
                 }
-                
-            } 
-            else if(_action == "update_profile") {
 
-                if(e.email != "") {
+            }
+            else if (_action == "update_profile")
+            {
+
+                if (e.email != "")
+                {
                     requester.email = e.email;
                 }
 
-                if(e.realName != "") {
+                if (e.realName != "")
+                {
                     requester.name = e.realName;
                 }
 
-                if(e.picture != "") {
+                if (e.picture != "")
+                {
                     requester.profilePicURL = e.picture;
                 }
 
@@ -514,38 +606,42 @@ class ZephyrServer {
                 return "OK";
             }
 
-
-
             return "UNIMPLEMENTED";
         }
 
         @path("/api/v1/vps/:target")
         @method(HTTPMethod.GET)
-        nothrow
-        string getVPS(string api_key, string _target)
+        nothrow string getVPS(string api_key, string _target)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.servers.canFind(_target)) {
+            if (!requester.servers.canFind(_target))
+            {
                 return "NO_ACCESS";
             }
 
             auto _v = _db.getVPS(_target);
-            if(_v.isNull) {
+            if (_v.isNull)
+            {
                 assert(0, "Got a VPS that shouldn't be accessible.");
             }
 
             import bap.models.vps;
+
             VPS v = _v;
 
             string ret;
-            try {
+            try
+            {
                 ret = v.stringify;
-            } catch(Exception e) {
+            }
+            catch (Exception e)
+            {
                 ret = "ERR_EXCEPTION";
                 logError("exception: %s", e.msg);
             }
@@ -555,102 +651,120 @@ class ZephyrServer {
 
         @path("/api/v1/vps/:target/:category")
         @method(HTTPMethod.GET)
-        nothrow
-        string getVPSInfo(string api_key, string data, string _target, string _category)
+        nothrow string getVPSInfo(string api_key, string data, string _target, string _category)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
-            if(!requester.servers.canFind(_target)) {
+            if (!requester.servers.canFind(_target))
+            {
                 return "NO_ACCESS";
             }
 
             auto _v = _db.getVPS(_target);
-            if(_v.isNull) {
+            if (_v.isNull)
+            {
                 assert(0, "Got a VPS that shouldn't be accessible.");
             }
 
             import bap.models.vps;
+
             VPS v = _v;
 
-            if(_category == "disk") {
-
-            } 
-            else if(_category == "cpu") {
+            if (_category == "disk")
+            {
 
             }
-            else if(_category == "ram") {
+            else if (_category == "cpu")
+            {
 
             }
-            else if(_category == "template") {
+            else if (_category == "ram")
+            {
 
             }
-            else if(_category == "config") {
+            else if (_category == "template")
+            {
 
             }
-            else if(_category == "node") {
+            else if (_category == "config")
+            {
 
             }
+            else if (_category == "node")
+            {
 
+            }
 
             return "UNIMPLEMENTED";
         }
 
         @path("/api/v1/vps/:target/:action")
         @method(HTTPMethod.POST)
-        nothrow
-        string postVPSAction(string api_key, string data, string _target, string _action)
+        nothrow string postVPSAction(string api_key, string data, string _target, string _action)
         {
-            if(!canFindAPIKey(api_key)) {
+            if (!canFindAPIKey(api_key))
+            {
                 return "AUTH_FAIL";
             }
 
             User requester = pullFromAPIKey(api_key);
 
-            if(!requester.servers.canFind(_target)) {
+            if (!requester.servers.canFind(_target))
+            {
                 return "NO_ACCESS";
             }
 
             auto _v = _db.getVPS(_target);
-            if(_v.isNull) {
+            if (_v.isNull)
+            {
                 assert(0, "Got a VPS that shouldn't be accessible.");
             }
 
             import bap.models.vps;
+
             VPS v = _v;
 
-            if(_action == "start") {
+            if (_action == "start")
+            {
                 logInfo("got %s action", _action);
                 return "OK";
-            } 
-            else if(_action == "shutdown") {
+            }
+            else if (_action == "shutdown")
+            {
                 logInfo("got %s action", _action);
                 return "OK";
 
             }
-            else if(_action == "stop") {
+            else if (_action == "stop")
+            {
                 logInfo("got %s action", _action);
                 return "OK";
 
             }
-            else if(_action == "reboot") {
+            else if (_action == "reboot")
+            {
                 logInfo("got %s action", _action);
                 return "OK";
 
-            } 
-            else if(_action == "redeploy") {
+            }
+            else if (_action == "redeploy")
+            {
                 logInfo("got %s action", _action);
 
                 mixin GrabEvent!(VPSTarget);
 
-                if(_eventGrabber == "no") { 
+                if (_eventGrabber == "no")
+                {
                     return _eventGrabber;
                 }
                 return "OK";
             }
-            else if(_action == "mmds") {
+            else if (_action == "mmds")
+            {
 
             }
 
@@ -659,33 +773,44 @@ class ZephyrServer {
 
     }
 
-    void loadConfig(string path = "./config.json") {
+    void loadConfig(string path = "./config.json")
+    {
         import std.file;
         import asdf;
-        if(exists(path)) {
-            string c = cast(string)read(path);
+
+        if (exists(path))
+        {
+            string c = cast(string) read(path);
             serverConfig = c.deserialize!ZephyrConfig;
         }
-        else {
+        else
+        {
             serverConfig = ZephyrConfig();
             saveConfig(path);
         }
     }
 
-    void saveConfig(string path = "") {
-        if(path == "") {
+    void saveConfig(string path = "")
+    {
+        if (path == "")
+        {
             path = configPath;
         }
 
         import std.file;
-        try {
+
+        try
+        {
             write(path, serverConfig.stringify);
-        } catch(FileException e) {
+        }
+        catch (FileException e)
+        {
             logError("could not save config");
         }
     }
 
-    void startListener() {
+    void startListener()
+    {
         auto settings = new HTTPServerSettings;
         settings.port = 8082;
         settings.bindAddresses = ["0.0.0.0"];
@@ -696,21 +821,24 @@ class ZephyrServer {
 
         _db = new RedisDatabaseDriver(serverConfig.redisHost, serverConfig.redisPort);
 
-        apiKeyStore = _db.getClient().getDatabase(4); 
+        apiKeyStore = _db.getClient().getDatabase(4);
 
         listener = listenHTTP(settings, router);
 
-
-        foreach(user; _db.getAllUsers()) {
-            if(user.apiKey == "") {
+        foreach (user; _db.getAllUsers())
+        {
+            if (user.apiKey == "")
+            {
                 logWarn("user %s has no api key!", user.username);
                 logWarn("generating new one for them and assigning scope");
 
                 import dauth : randomToken;
+
                 user.apiKey = randomToken(64);
 
                 AuthInfo key;
-                if(user.admin) {
+                if (user.admin)
+                {
                     key.scopes = ["*"];
                 }
                 key.scopes ~= ["user." ~ user.username ~ ".*"];
@@ -723,12 +851,11 @@ class ZephyrServer {
         }
     }
 
-    this(string configPath) {
+    this(string configPath)
+    {
         logInfo("== Zephyr API server booting up ==");
 
         loadConfig(configPath);
         logInfo("== Loaded config ==");
     }
 }
-
-

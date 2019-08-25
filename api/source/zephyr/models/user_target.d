@@ -1,7 +1,8 @@
 module zephyr.models.user_target;
 import zephyr.models.base;
 
-struct UserTarget {
+struct UserTarget
+{
     mixin BaseModel;
 
     /* Creation/updating event */
@@ -14,4 +15,3 @@ struct UserTarget {
     /* Reset password */
     @serializationKeys("new_password") string newPassword = "";
 }
-
