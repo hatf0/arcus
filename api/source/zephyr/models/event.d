@@ -5,8 +5,7 @@ import zephyr.models.node_target;
 import zephyr.models.user_target;
 import zephyr.models.vps_target;
 
-struct Event
-{
-    mixin BaseModel;
+struct Event {
+	mixin BaseModel;
 
 }

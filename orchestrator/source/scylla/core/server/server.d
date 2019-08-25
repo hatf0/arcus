@@ -13,113 +13,94 @@ import bap.core.utils;
 import asdf;
 import bap.core.resource_manager;
 
-class ScyllaServer
-{
-    private
-    {
-        ScyllaConfig serverConfig;
-        RedisDatabaseDriver db;
-        Kintsugi vmServer;
+class ScyllaServer {
+	private {
+		ScyllaConfig serverConfig;
+		RedisDatabaseDriver db;
+		Kintsugi vmServer;
 
-        string configPath;
-    };
+		string configPath;
+	};
 
-    void loadConfig(string path = "./config.json")
-    {
-        import std.file, std.json;
+	void loadConfig(string path = "./config.json") {
+		import std.file, std.json;
 
-        if (exists(path))
-        {
-            string c = cast(string) read(path);
-            serverConfig = c.deserialize!ScyllaConfig();
-            log(LogLevel.INFO, "loaded arcus config from " ~ path);
-        }
-        else
-        {
-            serverConfig = ScyllaConfig();
-            log(LogLevel.INFO, "creating new config");
-            saveConfig(configPath);
-        }
-    }
+		if (exists(path)) {
+			string c = cast(string) read(path);
+			serverConfig = c.deserialize!ScyllaConfig();
+			log(LogLevel.INFO, "loaded arcus config from " ~ path);
+		} else {
+			serverConfig = ScyllaConfig();
+			log(LogLevel.INFO, "creating new config");
+			saveConfig(configPath);
+		}
+	}
 
-    void saveConfig(string path = "")
-    {
-        if (path == "")
-        {
-            path = configPath;
-        }
+	void saveConfig(string path = "") {
+		if (path == "") {
+			path = configPath;
+		}
 
-        import std.file;
+		import std.file;
 
-        try
-        {
-            write(path, serverConfig.stringify);
-        }
-        catch (FileException e)
-        {
-            log(LogLevel.ERROR, "could not save config");
-        }
-    }
+		try {
+			write(path, serverConfig.stringify);
+		} catch (FileException e) {
+			log(LogLevel.ERROR, "could not save config");
+		}
+	}
 
-    void startListener()
-    {
-        if (serverConfig.redisHost != "")
-        {
-            db = new RedisDatabaseDriver(serverConfig.redisHost, serverConfig.redisPort);
-            //    keyStore = db.getClient().getDatabase(4); 
-        }
+	void startListener() {
+		if (serverConfig.redisHost != "") {
+			db = new RedisDatabaseDriver(serverConfig.redisHost, serverConfig.redisPort);
+			//    keyStore = db.getClient().getDatabase(4); 
+		}
 
-    }
+	}
 
-    void validateConfig()
-    {
-        if (serverConfig.redisHost == "")
-        {
-            log(LogLevel.ERROR, "redis host is blank. Please fill in.");
-        }
+	void validateConfig() {
+		if (serverConfig.redisHost == "") {
+			log(LogLevel.ERROR, "redis host is blank. Please fill in.");
+		}
 
-        if (serverConfig.vpsStoragePath == "")
-        {
-            log(LogLevel.INFO, "storage path is blank, assuming typical location");
-        }
+		if (serverConfig.vpsStoragePath == "") {
+			log(LogLevel.INFO, "storage path is blank, assuming typical location");
+		}
 
-        if (serverConfig.vpsImagePath == "")
-        {
-            log(LogLevel.INFO, "image path is blank, assuming typical location");
-        }
+		if (serverConfig.vpsImagePath == "") {
+			log(LogLevel.INFO, "image path is blank, assuming typical location");
+		}
 
-        if (serverConfig.listenAddress == "")
-        {
-            log(LogLevel.INFO, "listen address is blank, assuming listen on all addresses");
-        }
-    }
+		if (serverConfig.listenAddress == "") {
+			log(LogLevel.INFO, "listen address is blank, assuming listen on all addresses");
+		}
+	}
 
-    this(string _configPath = "./config.json")
-    {
+	this(string _configPath = "./config.json") {
 
-        ResourceIdentifier logEngine = g_ResourceManager.instantiateResource("LogEngine");
+		ResourceIdentifier logEngine = g_ResourceManager.instantiateResource("LogEngine");
 
-        shared(Resource) _l = g_ResourceManager.getResource(logEngine);
+		shared(Resource) _l = g_ResourceManager.getResource(logEngine);
 
-        _l.useResource();
-        {
-            LogEngine l = cast(LogEngine) _l;
-            l.logFile = "scylla.log";
+		_l.useResource();
+		{
+			LogEngine l = cast(LogEngine) _l;
+			l.logFile = "scylla.log";
 
-            _l.deploy();
-        }
-        _l.releaseResource();
+			_l.deploy();
+		}
+		_l.releaseResource();
 
-        log(LogLevel.INFO, "arcus starting up..");
+		log(LogLevel.INFO, "arcus starting up..");
 
-        configPath = _configPath;
+		configPath = _configPath;
 
-        loadConfig(configPath);
+		loadConfig(configPath);
 
-        vmServer = new Kintsugi();
-        import vibe.core.core : lowerPrivileges;
+		vmServer = new Kintsugi();
+		import vibe.core.core : lowerPrivileges;
 
-        lowerPrivileges("nobody", "kvm");
-    }
+		lowerPrivileges("nobody", "kvm");
+	}
 
 };

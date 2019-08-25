@@ -103,221 +103,190 @@ NOTE: This class is ONLY intended for sub-MB files.
 If your metadata is getting to anything ABOVE 10Mb, THIS WILL BECOME A MAJOR ISSUE!
 */
 
-shared class Resource
-{
-    protected
-    {
-        bool deployed = false;
-        Mutex mtx;
-        ResourceIdentifier self;
+shared class Resource {
+	protected {
+		bool deployed = false;
+		Mutex mtx;
+		ResourceIdentifier self;
 
-        DateTime creation_date;
-        string[] connections;
-    }
+		DateTime creation_date;
+		string[] connections;
+	}
 
-    /* 
+	/* 
 	   Persistent storage for variables
 	   Persists even across restarts of the program
 	   Store nothing sensitive in this
 	 */
-    ResourceStorage storage;
+	ResourceStorage storage;
 
-    file_entry[] getFiles()
-    {
-        return null;
-    }
+	file_entry[] getFiles() {
+		return null;
+	}
 
-    abstract string getClass();
-    abstract string getStatus();
-    abstract bool exportable();
+	abstract string getClass();
+	abstract string getStatus();
+	abstract bool exportable();
 
-    @property Variant opDispatch(string target)() const
-    {
+	@property Variant opDispatch(string target)() const {
 
-        Variant ret = 0;
+		Variant ret = 0;
 
-        if (storage != null)
-        {
-            string var = target;
-            foreach (file; getFiles())
-            {
-                if (file.name == var)
-                {
-                    Variant storedFile = storage[var];
-                    return storedFile;
-                }
-            }
-        }
-        else
-        {
-            assert(0, "opDispatch called on an object with no storage..");
-        }
+		if (storage != null) {
+			string var = target;
+			foreach (file; getFiles()) {
+				if (file.name == var) {
+					Variant storedFile = storage[var];
+					return storedFile;
+				}
+			}
+		} else {
+			assert(0, "opDispatch called on an object with no storage..");
+		}
 
-        return ret;
-    }
+		return ret;
+	}
 
-    ubyte[] exportResource()
-    {
-        // The MinimalResource struct
-        // ensures that we can keep data
-        // even after we have restarted the
-        // application. It saves only the 
-        // bare minimum, which includes
-        // filesystem contents, connections,
-        // it's class, it's creation time
-        // and nothing else. 
-        // It is assumed that the programmer
-        // will use the ResourceStorage
-        // to store configurations and have
-        // it persistent.
-        if (!exportable)
-        {
-            return null;
-        }
-        MinimalResource res = MinimalResource();
-        DateTime _creation = creation_date;
-        res.creation_time = _creation.toISOExtString();
-        res.id = self;
-        res.deployed = deployed;
-        res.connections = g_ResourceManager.getConnections(self);
-        if (storage !is null)
-        {
-            ResourceStorage _storage = cast(ResourceStorage) storage;
-            res.resources = _storage.exportAll();
-        }
+	ubyte[] exportResource() {
+		// The MinimalResource struct
+		// ensures that we can keep data
+		// even after we have restarted the
+		// application. It saves only the 
+		// bare minimum, which includes
+		// filesystem contents, connections,
+		// it's class, it's creation time
+		// and nothing else. 
+		// It is assumed that the programmer
+		// will use the ResourceStorage
+		// to store configurations and have
+		// it persistent.
+		if (!exportable) {
+			return null;
+		}
+		MinimalResource res = MinimalResource();
+		DateTime _creation = creation_date;
+		res.creation_time = _creation.toISOExtString();
+		res.id = self;
+		res.deployed = deployed;
+		res.connections = g_ResourceManager.getConnections(self);
+		if (storage !is null) {
+			ResourceStorage _storage = cast(ResourceStorage) storage;
+			res.resources = _storage.exportAll();
+		}
 
-        res.resourceClass = getClass();
+		res.resourceClass = getClass();
 
-        return res.serialize();
-    }
+		return res.serialize();
+	}
 
-    bool destroy()
-    {
-        import std.process, std.file;
+	bool destroy() {
+		import std.process, std.file;
 
-        import std.stdio : writefln;
+		import std.stdio : writefln;
 
-        if (storage is null)
-        {
-            return true;
-        }
+		if (storage is null) {
+			return true;
+		}
 
-        string path = filePath ~ "/" ~ self.uuid;
+		string path = filePath ~ "/" ~ self.uuid;
 
-        debug writefln("path: %s", path);
+		debug writefln("path: %s", path);
 
-        import core.thread, core.time;
+		import core.thread, core.time;
 
-        auto umount_tid = spawnProcess(["/usr/bin/umount", "-lf", path]);
-        auto umount = tryWait(umount_tid);
+		auto umount_tid = spawnProcess(["/usr/bin/umount", "-lf", path]);
+		auto umount = tryWait(umount_tid);
 
-        debug writefln("code: %d", umount.status);
-        if (umount.status != 0)
-        {
-            string[] mounts = readText("/proc/mounts").split('\n');
-            bool found = false;
-            foreach (mount; mounts)
-            {
-                import std.algorithm.searching;
+		debug writefln("code: %d", umount.status);
+		if (umount.status != 0) {
+			string[] mounts = readText("/proc/mounts").split('\n');
+			bool found = false;
+			foreach (mount; mounts) {
+				import std.algorithm.searching;
 
-                if (mount.canFind(path))
-                {
-                    found = true;
-                }
-            }
+				if (mount.canFind(path)) {
+					found = true;
+				}
+			}
 
-            assert(!found, "failed to unmount a path which is mounted");
-        }
-        debug writefln("unmounted %s successfully", path);
+			assert(!found, "failed to unmount a path which is mounted");
+		}
+		debug writefln("unmounted %s successfully", path);
 
-        debug writefln("trying to remove %s", path);
+		debug writefln("trying to remove %s", path);
 
-        /*
+		/*
 		   THIS WILL PROBABLY HANG IF ANYTHING IS IN USE
 		   BUT SADLY I CAN'T ADD THREAD.SLEEP BECAUSE NANOSLEEP
 		   FUCKS UP CONTROL FLOW SOMEHOW??
 		*/
 
-        /* 
+		/* 
 		   WTF?
 		*/
 
-        while (exists(path) && isDir(path))
-        {
-            try
-            {
-                rmdir(path);
-            }
-            catch (Exception e)
-            {
-            }
-        }
+		while (exists(path) && isDir(path)) {
+			try {
+				rmdir(path);
+			} catch (Exception e) {
+			}
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    bool deploy()
-    {
-        /* DANGEROUS */
-        if (deployed)
-        {
-            return false;
-        }
+	bool deploy() {
+		/* DANGEROUS */
+		if (deployed) {
+			return false;
+		}
 
-        ResourceStorage st = cast(ResourceStorage) storage;
-        if (!(st is null))
-        {
-            ResourceIdentifier id = cast(ResourceIdentifier) self;
+		ResourceStorage st = cast(ResourceStorage) storage;
+		if (!(st is null)) {
+			ResourceIdentifier id = cast(ResourceIdentifier) self;
 
-            g_ResourceManager.requestMount(st, self);
-            deployed = true;
-        }
-        return true;
-    }
+			g_ResourceManager.requestMount(st, self);
+			deployed = true;
+		}
+		return true;
+	}
 
-    abstract bool connect(ResourceIdentifier id)
-    {
-        if (id.zone.zoneId != regionID)
-        {
-            return false;
-        }
-        connections ~= id.uuid;
-        return true;
-    }
+	abstract bool connect(ResourceIdentifier id) {
+		if (id.zone.zoneId != regionID) {
+			return false;
+		}
+		connections ~= id.uuid;
+		return true;
+	}
 
-    abstract bool disconnect(ResourceIdentifier id)
-    {
-        if (connections.canFind(id.uuid))
-        {
-            connections.remove!(a => a == id.uuid)();
-            return true;
-        }
-        return false;
-    }
+	abstract bool disconnect(ResourceIdentifier id) {
+		if (connections.canFind(id.uuid)) {
+			connections.remove!(a => a == id.uuid)();
+			return true;
+		}
+		return false;
+	}
 
-    abstract bool canDisconnect(ResourceIdentifier id);
+	abstract bool canDisconnect(ResourceIdentifier id);
 
-    void useResource() shared @safe nothrow @nogc
-    {
-        import core.thread;
-        import std.datetime;
+	void useResource() shared @safe nothrow @nogc {
+		import core.thread;
+		import std.datetime;
 
-        while (mtx.tryLock_nothrow() == false)
-        {
-            () @trusted { Thread.sleep(1.msecs); }();
-        }
+		while (mtx.tryLock_nothrow() == false) {
+			() @trusted { Thread.sleep(1.msecs); }();
+		}
 
-        activeMutexes++;
+		activeMutexes++;
 
-    }
+	}
 
-    void releaseResource() shared @safe nothrow @nogc
-    {
-        assert(activeMutexes != 0, "releaseResource called when there are no active mutexes!");
+	void releaseResource() shared @safe nothrow @nogc {
+		assert(activeMutexes != 0, "releaseResource called when there are no active mutexes!");
 
-        activeMutexes--;
-        mtx.unlock_nothrow();
-    }
+		activeMutexes--;
+		mtx.unlock_nothrow();
+	}
 }
 
 /*
@@ -328,26 +297,22 @@ shared class Resource
    likely to be accessed by the ResourceManager thread.
 */
 
-shared class ResourceSingleton
-{
-    Mutex mtx;
-    abstract Resource instantiate(string data);
-    void useResource() shared @safe nothrow @nogc
-    {
-        mtx.lock_nothrow();
-    }
+shared class ResourceSingleton {
+	Mutex mtx;
+	abstract Resource instantiate(string data);
+	void useResource() shared @safe nothrow @nogc {
+		mtx.lock_nothrow();
+	}
 
-    void releaseResource() shared @safe nothrow @nogc
-    {
-        mtx.unlock_nothrow();
-    }
+	void releaseResource() shared @safe nothrow @nogc {
+		mtx.unlock_nothrow();
+	}
 
 }
 
-shared class OneConnectionResource : Resource
-{ //for example, network interfaces
-    bool attached = false;
-    ResourceIdentifier owner;
+shared class OneConnectionResource : Resource { //for example, network interfaces
+	bool attached = false;
+	ResourceIdentifier owner;
 }
 
 /*
@@ -364,296 +329,236 @@ instantiation system!
 */
 import dfuse.fuse;
 
-class ResourceManager
-{
-    private
-    {
-        Fuse[] resourceFS;
-        shared(Resource)[string] _resources;
-        ResourceIdentifier[][string] _connections;
+class ResourceManager {
+	private {
+		Fuse[] resourceFS;
+		shared(Resource)[string] _resources;
+		ResourceIdentifier[][string] _connections;
 
-        Resource delegate(string)[string] _instanceTable;
-        string askForUUID()
-        {
-            import std.uuid;
+		Resource delegate(string)[string] _instanceTable;
+		string askForUUID() {
+			import std.uuid;
 
-            while (true)
-            {
-                auto uuid = randomUUID();
-                if (!(uuid.toString() in _resources))
-                {
-                    return uuid.toString();
-                }
-            }
-        }
-    }
+			while (true) {
+				auto uuid = randomUUID();
+				if (!(uuid.toString() in _resources)) {
+					return uuid.toString();
+				}
+			}
+		}
+	}
 
-    string[] getAllResourceClasses()
-    {
-        return _instanceTable.keys.dup;
-    }
+	string[] getAllResourceClasses() {
+		return _instanceTable.keys.dup;
+	}
 
-    string[] getAllResources()
-    {
-        return _resources.keys.dup;
-    }
+	string[] getAllResources() {
+		return _resources.keys.dup;
+	}
 
-    bool isValidClass(string className)
-    {
-        if (className in _instanceTable)
-        {
-            return true;
-        }
-        return false;
-    }
+	bool isValidClass(string className) {
+		if (className in _instanceTable) {
+			return true;
+		}
+		return false;
+	}
 
-    void registerClass(string _className, Resource delegate(string) dlg)
-    {
-        assert(!(_className in _instanceTable), "Cannot override delegate for class..");
+	void registerClass(string _className, Resource delegate(string) dlg) {
+		assert(!(_className in _instanceTable), "Cannot override delegate for class..");
 
-        assert(dlg != null, "dlg was null!");
+		assert(dlg != null, "dlg was null!");
 
-        _instanceTable[_className] = cast(Resource delegate(string)) dlg;
-    }
+		_instanceTable[_className] = cast(Resource delegate(string)) dlg;
+	}
 
-    ResourceIdentifier instantiateFromBackup(ubyte[] data)
-    {
-        MinimalResource res = MinimalResource(data);
-        assert(res.resourceClass in _instanceTable, "Non-existant class loaded");
+	ResourceIdentifier instantiateFromBackup(ubyte[] data) {
+		MinimalResource res = MinimalResource(data);
+		assert(res.resourceClass in _instanceTable, "Non-existant class loaded");
 
-        Resource r = _instanceTable[res.resourceClass](res.id.uuid);
-        assert(!(r is null), "Resource was null when attempting to load from a backup.");
+		Resource r = _instanceTable[res.resourceClass](res.id.uuid);
+		assert(!(r is null), "Resource was null when attempting to load from a backup.");
 
-        r.creation_date = cast(shared(DateTime)) DateTime.fromISOExtString(res.creation_time);
-        _connections[res.id.uuid] = res.connections;
+		r.creation_date = cast(shared(DateTime)) DateTime.fromISOExtString(res.creation_time);
+		_connections[res.id.uuid] = res.connections;
 
-        if (r.storage !is null)
-        {
-            ResourceStorage _storage = cast(ResourceStorage) r.storage;
-            _storage.importBak(res.resources);
-        }
+		if (r.storage !is null) {
+			ResourceStorage _storage = cast(ResourceStorage) r.storage;
+			_storage.importBak(res.resources);
+		}
 
-        if (res.deployed)
-        {
-            shared(Resource) _s = cast(shared(Resource)) r;
-            assert(_s.deploy(), "Deploy failed..");
-        }
+		if (res.deployed) {
+			shared(Resource) _s = cast(shared(Resource)) r;
+			assert(_s.deploy(), "Deploy failed..");
+		}
 
-        _resources[res.id.uuid] = cast(shared(Resource)) r;
+		_resources[res.id.uuid] = cast(shared(Resource)) r;
 
-        return res.id;
-    }
+		return res.id;
+	}
 
-    ResourceIdentifier instantiateResource(string _class)
-    {
-        assert(_class in _instanceTable, "Class must exist..");
+	ResourceIdentifier instantiateResource(string _class) {
+		assert(_class in _instanceTable, "Class must exist..");
 
-        string objectUUID = askForUUID();
-        Resource r = _instanceTable[_class](objectUUID);
+		string objectUUID = askForUUID();
+		Resource r = _instanceTable[_class](objectUUID);
 
-        assert(!(r is null), "Resource was null during instantiation");
+		assert(!(r is null), "Resource was null during instantiation");
 
-        import bap.core.utils;
+		import bap.core.utils;
 
-        r.creation_date = cast(shared(DateTime)) Clock.currTime();
+		r.creation_date = cast(shared(DateTime)) Clock.currTime();
 
-        _resources[objectUUID] = cast(shared Resource) r;
+		_resources[objectUUID] = cast(shared Resource) r;
 
-        return id(regionID, objectUUID);
-    }
+		return id(regionID, objectUUID);
+	}
 
-    string resourceStatus(ResourceIdentifier id)
-    {
-        if (id.uuid in _resources)
-        {
-            shared Resource r = _resources[id.uuid];
-            r.useResource();
-            string status = r.getStatus().idup;
-            r.releaseResource();
+	string resourceStatus(ResourceIdentifier id) {
+		if (id.uuid in _resources) {
+			shared Resource r = _resources[id.uuid];
+			r.useResource();
+			string status = r.getStatus().idup;
+			r.releaseResource();
 
-            return status;
-        }
-        else
-        {
-            return "NO_EXIST";
-        }
-    }
+			return status;
+		} else {
+			return "NO_EXIST";
+		}
+	}
 
-    bool destroyResource(ResourceIdentifier id)
-    {
-        if (id.uuid in _resources)
-        {
-            if (id.uuid in _connections)
-            {
-            }
-            shared Resource r = _resources[id.uuid];
-            r.useResource();
-            bool status = r.destroy();
-            r.releaseResource();
+	bool destroyResource(ResourceIdentifier id) {
+		if (id.uuid in _resources) {
+			if (id.uuid in _connections) {
+			}
+			shared Resource r = _resources[id.uuid];
+			r.useResource();
+			bool status = r.destroy();
+			r.releaseResource();
 
-            _resources.remove(id.uuid);
-            return status;
-        }
-        return false;
-    }
+			_resources.remove(id.uuid);
+			return status;
+		}
+		return false;
+	}
 
-    shared(Resource) getResource(ResourceIdentifier id)
-    {
-        if (id.uuid in _resources)
-        {
-            return _resources[id.uuid];
-        }
-        return null;
-    }
+	shared(Resource) getResource(ResourceIdentifier id) {
+		if (id.uuid in _resources) {
+			return _resources[id.uuid];
+		}
+		return null;
+	}
 
-    bool associateResource(ResourceIdentifier resource, ResourceIdentifier target)
-    {
-        if (resource.uuid in _resources)
-        {
-            if (target.uuid in _resources)
-            {
-                if (resource.uuid in _connections)
-                {
-                    _connections[resource.uuid] ~= target;
-                }
-                else
-                {
-                    _connections[resource.uuid] = [target];
-                }
+	bool associateResource(ResourceIdentifier resource, ResourceIdentifier target) {
+		if (resource.uuid in _resources) {
+			if (target.uuid in _resources) {
+				if (resource.uuid in _connections) {
+					_connections[resource.uuid] ~= target;
+				} else {
+					_connections[resource.uuid] = [target];
+				}
 
-                if (target.uuid in _connections)
-                {
-                    _connections[target.uuid] ~= resource;
-                }
-                else
-                {
-                    _connections[target.uuid] = [resource];
-                }
+				if (target.uuid in _connections) {
+					_connections[target.uuid] ~= resource;
+				} else {
+					_connections[target.uuid] = [resource];
+				}
 
-                return true;
-            }
-        }
-        return false;
-    }
+				return true;
+			}
+		}
+		return false;
+	}
 
-    bool disassociateResource(ResourceIdentifier resource, ResourceIdentifier target)
-    {
-        if (resource.uuid in _resources)
-        {
-            if (target.uuid in _resources)
-            {
-                if (resource.uuid in _connections)
-                {
-                    if (target.uuid in _connections)
-                    {
-                        if (_connections[resource.uuid].canFind(target))
-                        {
-                            if (_connections[target.uuid].canFind(resource))
-                            {
-                                foreach (i, con; _connections[target.uuid])
-                                {
-                                    if (con.uuid == resource.uuid)
-                                    {
-                                        _connections[target.uuid].remove(i);
-                                    }
-                                }
+	bool disassociateResource(ResourceIdentifier resource, ResourceIdentifier target) {
+		if (resource.uuid in _resources) {
+			if (target.uuid in _resources) {
+				if (resource.uuid in _connections) {
+					if (target.uuid in _connections) {
+						if (_connections[resource.uuid].canFind(target)) {
+							if (_connections[target.uuid].canFind(resource)) {
+								foreach (i, con; _connections[target.uuid]) {
+									if (con.uuid == resource.uuid) {
+										_connections[target.uuid].remove(i);
+									}
+								}
 
-                                foreach (i, con; _connections[resource.uuid])
-                                {
-                                    if (con.uuid == target.uuid)
-                                    {
-                                        _connections[resource.uuid].remove(i);
-                                    }
-                                }
-                            }
-                        }
+								foreach (i, con; _connections[resource.uuid]) {
+									if (con.uuid == target.uuid) {
+										_connections[resource.uuid].remove(i);
+									}
+								}
+							}
+						}
 
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
+					} else {
+						return false;
+					}
+				} else {
+					return false;
+				}
 
-            }
-        }
-        return false;
-    }
+			}
+		}
+		return false;
+	}
 
-    void cleanup()
-    {
-        import std.stdio;
+	void cleanup() {
+		import std.stdio;
 
-        debug writefln("called to cleanup!");
-        // PROGRAM IS ABOUT TO SHUTDOWN ANYWAYS!
-        foreach (d, k; _resources)
-        {
-            import std.file : write;
+		debug writefln("called to cleanup!");
+		// PROGRAM IS ABOUT TO SHUTDOWN ANYWAYS!
+		foreach (d, k; _resources) {
+			import std.file : write;
 
-            if (!(k is null))
-            {
-                if (k.exportable())
-                {
-                    debug writefln("writing out %s", k.self.uuid);
-                    write(backupPath ~ "/" ~ k.self.uuid ~ ".bak", k.exportResource());
-                }
-                debug writefln("destroying resource %s", k.self.uuid);
-                assert(k.destroy(), "failed to destroy object");
-            }
-        }
+			if (!(k is null)) {
+				if (k.exportable()) {
+					debug writefln("writing out %s", k.self.uuid);
+					write(backupPath ~ "/" ~ k.self.uuid ~ ".bak", k.exportResource());
+				}
+				debug writefln("destroying resource %s", k.self.uuid);
+				assert(k.destroy(), "failed to destroy object");
+			}
+		}
 
-        writefln("done!");
-    }
+		writefln("done!");
+	}
 
-    bool requestMount(Operations op, ResourceIdentifier id)
-    {
-        import std.file;
+	bool requestMount(Operations op, ResourceIdentifier id) {
+		import std.file;
 
-        string path = filePath ~ "/" ~ id.uuid ~ "/";
-        import std.stdio : writefln;
+		string path = filePath ~ "/" ~ id.uuid ~ "/";
+		import std.stdio : writefln;
 
-        debug writefln("requested mount to %s", path);
-        if (!exists(path))
-        {
-            try
-            {
-                mkdir(path);
-            }
-            catch (Exception e)
-            {
-            }
-        }
-        import std.parallelism;
+		debug writefln("requested mount to %s", path);
+		if (!exists(path)) {
+			try {
+				mkdir(path);
+			} catch (Exception e) {
+			}
+		}
+		import std.parallelism;
 
-        Fuse obj = new Fuse("ResourceStorage", true, true);
-        resourceFS ~= obj;
-        auto fsRun = task!runMount(obj, op, path);
-        fsRun.executeInNewThread();
+		Fuse obj = new Fuse("ResourceStorage", true, true);
+		resourceFS ~= obj;
+		auto fsRun = task!runMount(obj, op, path);
+		fsRun.executeInNewThread();
 
-        return true;
-    }
+		return true;
+	}
 
-    ResourceIdentifier[] getConnections(ResourceIdentifier id)
-    {
-        ResourceIdentifier[] connections;
-        if (id.uuid in _connections)
-        {
-            ResourceIdentifier[] connMap = _connections[id.uuid];
-            foreach (connection; connMap)
-            {
-                connections ~= connection;
-            }
-        }
-        return connections;
+	ResourceIdentifier[] getConnections(ResourceIdentifier id) {
+		ResourceIdentifier[] connections;
+		if (id.uuid in _connections) {
+			ResourceIdentifier[] connMap = _connections[id.uuid];
+			foreach (connection; connMap) {
+				connections ~= connection;
+			}
+		}
+		return connections;
 
-    }
+	}
 
-    this()
-    {
-    }
+	this() {
+	}
 
 }

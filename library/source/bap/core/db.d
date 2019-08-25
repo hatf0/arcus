@@ -5,33 +5,32 @@ public import bap.models.user;
 public import std.typecons;
 public import std.uuid;
 
-interface DatabaseDriver
-{
+interface DatabaseDriver {
 
-    bool authenticateUser(string username, string hash);
+	bool authenticateUser(string username, string hash);
 
-    bool insertUser(User user);
+	bool insertUser(User user);
 
-    bool deleteUser(string username);
+	bool deleteUser(string username);
 
-    Nullable!User getUser(string username);
+	Nullable!User getUser(string username);
 
-    User[] getAllUsers();
+	User[] getAllUsers();
 
-    bool insertVPS(VPS vps);
+	bool insertVPS(VPS vps);
 
-    bool deleteVPS(string machineID);
+	bool deleteVPS(string machineID);
 
-    Nullable!VPS getVPS(string machineID);
+	Nullable!VPS getVPS(string machineID);
 
-    VPS[] getAllVPS();
+	VPS[] getAllVPS();
 
-    bool insertNode(Node node);
+	bool insertNode(Node node);
 
-    bool deleteNode(string name);
+	bool deleteNode(string name);
 
-    Nullable!Node getNode(string name);
+	Nullable!Node getNode(string name);
 
-    Node[] getAllNode();
+	Node[] getAllNode();
 
 }
