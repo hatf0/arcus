@@ -1,8 +1,8 @@
 # Arcus
 This is informally called "Arcus" (formerly beautiful-admin-panel). It is meant to be a competitor towards solutions such as Virtualizor, which have horrible UI/UX designs.
 
-## Security
-I have put my best effort into ensuring that this project is properly secure, however, if you notice any security issues, email me them, or create an issue in the repo.
+## Issue Board
+View the Issue board [here](https://app.gitkraken.com/glo/board/XV7lsIKexAAPbgER)
 
 ## Compilation instructions
 Run `build.sh`, or `dub build -c [api/web/orchestrator/vmm/cli]`.
