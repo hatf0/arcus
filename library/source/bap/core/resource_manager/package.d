@@ -18,7 +18,7 @@ static int activeMutexes = 0;
 // Here be dragons..
 
 struct Exportable {
-	bool export_;
+	bool val;
 }
 
 // dfmt off
@@ -110,21 +110,34 @@ NOTE: This class is ONLY intended for sub-MB files.
 If your metadata is getting to anything ABOVE 10Mb, THIS WILL BECOME A MAJOR ISSUE!
 */
 
-
 /*
    Ensure that we are the only person on this, then use it
 */
 
-mixin template EnsureNonNull() {
+string EnsureNonNull() {
 	enum EnsureNonNull = "
+			import std.stdio : writeln;
+			writeln(\"Active mutexes: \", activeMutexes);
+			int __waitCount = 0;
 			while(activeMutexes != 0) {
+				if(__waitCount % 10 == 0) {
+					writeln(\"Waiting on mutex release on object\");
+				}
+
+				if(__waitCount == 50) {
+					assert(0, \"Wait count should never be this high.\");
+				}
+					
 				import core.thread, core.time;
-				Thread.sleep(1.msecs);
+				Thread.sleep(1.seconds);
+				__waitCount++;
+
 			}
 
 			activeMutexes++;
 			scope(exit) activeMutexes--;
 	";
+	return EnsureNonNull;
 }
 
 interface GenericResource {
@@ -151,15 +164,12 @@ interface GenericResource {
 	bool canDisconnect(ResourceIdentifier id);
 }
 
-
-
-
 class Resource(T) : GenericResource {
 
 	T _inside;
 	Mutex mtx;
 	ResourceIdentifier _self;
-	
+
 	DateTime creation_date;
 	ResourceIdentifier[] connection_table;
 	file_entry[] file_table;
@@ -172,8 +182,8 @@ class Resource(T) : GenericResource {
 		return file_table;
 	}
 
-	@property bool exportable() { 
-		return __traits(getAttributes, T)[0];
+	@property bool exportable() {
+		return __traits(getAttributes, T)[0].val;
 	}
 
 	@property string getClass() {
@@ -190,7 +200,7 @@ class Resource(T) : GenericResource {
 	}
 
 	@property ResourceIdentifier self() {
-		return self;
+		return _self;
 	}
 
 	@property DateTime creation() {
@@ -211,7 +221,7 @@ class Resource(T) : GenericResource {
 		return storage;
 	}
 
-/*	@property Variant opDispatch(string target)() const {
+	/*	@property Variant opDispatch(string target)() const {
 		Variant ret = 0;
 
 		if (storage != null) {
@@ -229,8 +239,6 @@ class Resource(T) : GenericResource {
 		return ret;
 	}
 	*/
-
-
 
 	/*
 		This borrows the object inside,
@@ -250,7 +258,7 @@ class Resource(T) : GenericResource {
 		// will use the ResourceStorage
 		// to store configurations and have
 		// it persistent.
-		mixin EnsureNonNull;
+		mixin(EnsureNonNull());
 
 		if (!exportable) {
 			return null;
@@ -274,9 +282,9 @@ class Resource(T) : GenericResource {
 	}
 
 	bool destroy() {
-		mixin EnsureNonNull;
+		mixin(EnsureNonNull());
 
-		_inside.destroy(); 
+		_inside.destroy();
 
 		import std.process, std.file;
 
@@ -335,7 +343,7 @@ class Resource(T) : GenericResource {
 
 	bool deploy() {
 		/* DANGEROUS */
-		mixin EnsureNonNull;
+		mixin(EnsureNonNull());
 
 		if (deployed) {
 			return false;
@@ -354,7 +362,7 @@ class Resource(T) : GenericResource {
 	}
 
 	bool connect(ResourceIdentifier id) {
-		mixin EnsureNonNull;
+		mixin(EnsureNonNull());
 
 		if (id.zone.zoneId != regionID) {
 			return false;
@@ -365,15 +373,15 @@ class Resource(T) : GenericResource {
 	}
 
 	bool disconnect(ResourceIdentifier id) {
-		mixin EnsureNonNull;
+		mixin(EnsureNonNull());
 
-		foreach(i, c; connection_table) {
-			if(c.uuid == id.uuid) {
+		foreach (i, c; connection_table) {
+			if (c.uuid == id.uuid) {
 				connection_table.remove(i);
 			}
 		}
 
-		if(_inside.canDisconnect(id)) {
+		if (_inside.canDisconnect(id)) {
 			_inside.disconnect(id);
 			return true;
 		}
@@ -381,15 +389,13 @@ class Resource(T) : GenericResource {
 	}
 
 	bool canDisconnect(ResourceIdentifier id) {
-		mixin EnsureNonNull;
-		if(!deployed) {
+		mixin(EnsureNonNull());
+		if (!deployed) {
 			return false;
 		}
 
 		return _inside.canDisconnect(id);
 	}
-
-
 
 	Unique!(T) useResource() {
 		import core.thread;
@@ -400,17 +406,18 @@ class Resource(T) : GenericResource {
 		}
 
 		activeMutexes++;
-		
+
 		Unique!(T) res = _inside; //THIS NULLS THE OPERATION INSIDE
 		return res;
 	}
 
-	void releaseResource(Unique!(T) res) {
+	void releaseResource(ref Unique!(T) res) {
 		assert(activeMutexes != 0, "releaseResource called when there are no active mutexes!");
 
 		//consume it rawr
 		import std.algorithm.mutation : move;
-		T _res = cast(T)res;
+
+		T _res = cast(T) res;
 		_inside = move(_res);
 
 		activeMutexes--;
@@ -419,11 +426,16 @@ class Resource(T) : GenericResource {
 
 	this(string data) {
 		_inside = new T(data);
+
+		mtx = new Mutex();
 	}
 
 	this(T inside) {
 		import std.algorithm.mutation : move;
+
 		_inside = move(inside);
+
+		mtx = new Mutex();
 	}
 }
 
@@ -501,7 +513,8 @@ class ResourceManager {
 	}
 
 	void registerClass(_class)(Variant delegate(string) dlg) {
-		assert(!(__traits(identifier, _class) in _instanceTable), "Cannot override delegate for class..");
+		assert(!(__traits(identifier, _class) in _instanceTable),
+				"Cannot override delegate for class..");
 
 		assert(dlg != null, "dlg was null!");
 
@@ -513,7 +526,7 @@ class ResourceManager {
 		assert(res.resourceClass in _instanceTable, "Non-existant class loaded");
 
 		auto _r = _instanceTable[res.resourceClass](res.id.uuid);
-		auto r = _r.peek!(GenericResource);
+		auto r = _r.get!(GenericResource);
 
 		assert(!(r is null), "Resource was null when attempting to load from a backup.");
 
@@ -541,25 +554,23 @@ class ResourceManager {
 
 		string objectUUID = askForUUID();
 		auto _r = _instanceTable[className](objectUUID);
-		auto r = _r.peek!(Resource!(_class));
+		auto _k = _r.get!(GenericResource);
 
-		assert(!(r is null), "Resource was null during instantiation");
+		assert(!(_k is null), "Resource was null during instantiation");
+
+		_k.creation = cast(shared(DateTime)) Clock.currTime();
 
 		import bap.core.utils;
-
-		r.creation = cast(shared(DateTime)) Clock.currTime();
 
 		_resources[objectUUID] = _r;
 
 		return id(regionID, objectUUID);
 	}
 
-	// RAII
-
 	Resource!T getResource(T)(ResourceIdentifier id) {
 		if (id.uuid in _resources) {
 			auto o = _resources[id.uuid];
-			if(o.peek!(Resource!T)) {
+			if (o.peek!(Resource!T)) {
 				Resource!T res = o.get!(Resource!T);
 				return res;
 			}
@@ -623,12 +634,16 @@ class ResourceManager {
 
 	void cleanup() {
 		import std.stdio;
+		
+		import core.memory;
+		//GC.disable;
+
 
 		debug writefln("called to cleanup!");
 		foreach (d, _k; _resources) {
 			import std.file : write;
 
-			auto k = _k.peek!(GenericResource);
+			auto k = _k.get!(GenericResource);
 
 			if (!(k is null)) {
 				if (k.exportable()) {

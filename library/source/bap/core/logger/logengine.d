@@ -24,11 +24,11 @@ import bap.core.utils;
 
 mixin OneInstanceSingleton!("LogEngine");
 
-@(false)
+@Exportable(false)
 class LogEngine {
 
 private:
-	
+
 	void logInfo(string origin, string msg) {
 		LogEvent l;
 		l.level = LogLevel.INFO;
@@ -123,9 +123,8 @@ private:
 		}
 	}
 
-	string logFile;
 public:
-
+	string logFile;
 	bool destroy() {
 		writeln("log engine shutting down");
 		run = false;

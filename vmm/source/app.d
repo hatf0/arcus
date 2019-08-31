@@ -23,18 +23,23 @@ void main() {
 	mixin ResourceInjector!("LogEngine", "bap.core.logger");
 
 	import bap.core.logger.logengine;
+
 	auto id = g_ResourceManager.instantiateResource!(LogEngine);
 
 	auto t = g_ResourceManager.getResource!(LogEngine)(id);
+
+	auto _t = t.useResource();
+
+	_t.logFile = "valkyrie.log";
 	
+	t.releaseResource(_t);
 	t.deploy();
 
 	import core.thread, core.time;
 
-	Thread.sleep(1.seconds);
+	runApplication();
 
+	
 
-	import std.stdio;
-
-	readln();
+	g_ResourceManager.cleanup();
 }

@@ -8,9 +8,7 @@ import bap.core.resource_manager;
 
 extern (C) __gshared string[] rt_options = ["gcopt=initReserve:50 profile:1"];
 
-static __gshared enum g_ClassList = [
-	"bap.core.logger": "LogEngine"
-];
+static __gshared enum g_ClassList = ["bap.core.logger" : "LogEngine"];
 
 void main() {
 	import core.sys.posix.unistd, std.process;

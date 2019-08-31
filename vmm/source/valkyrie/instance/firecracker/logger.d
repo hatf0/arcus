@@ -1,5 +1,6 @@
 module valkyrie.instance.firecracker.logger;
 import bap.core.resource_manager;
+
 /*
 
 final shared class FirecrackerVmLoggerSingleton : ResourceSingleton {
