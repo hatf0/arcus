@@ -24,8 +24,11 @@ import bap.core.utils;
 
 mixin OneInstanceSingleton!("LogEngine");
 
-shared class LogEngine : Resource {
+@(false)
+class LogEngine {
+
 private:
+	
 	void logInfo(string origin, string msg) {
 		LogEvent l;
 		l.level = LogLevel.INFO;
@@ -120,31 +123,19 @@ private:
 		}
 	}
 
-public:
 	string logFile;
+public:
 
-	override bool exportable() {
-		return false;
-	}
-
-	override string getClass() {
-		return "LogEngine";
-	}
-
-	override string getStatus() {
-		return "ACTIVE";
-	}
-
-	override bool destroy() {
+	bool destroy() {
 		writeln("log engine shutting down");
 		run = false;
 
 		Thread.sleep(100.msecs);
 
-		return super.destroy();
+		return true;
 	}
 
-	override bool deploy() {
+	bool deploy() {
 		run = true;
 
 		LogEvent l;
@@ -157,23 +148,21 @@ public:
 		Thread _thread = cast(Thread) thread;
 		_thread.isDaemon(true);
 		_thread.start();
-
-		return super.deploy();
+		return true;
 	}
 
-	override bool connect(ResourceIdentifier id) {
+	bool connect(ResourceIdentifier id) {
 		assert(0, "connect called on LogEngine");
 	}
 
-	override bool disconnect(ResourceIdentifier id) {
+	bool disconnect(ResourceIdentifier id) {
 		assert(0, "disconnect called on LogEngine");
 	}
 
-	override bool canDisconnect(ResourceIdentifier id) {
+	bool canDisconnect(ResourceIdentifier id) {
 		return false;
 	}
 
 	this(string uuid) {
-		mtx = new shared(Mutex)();
 	}
 }

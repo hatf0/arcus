@@ -17,6 +17,10 @@ static int activeMutexes = 0;
 
 // Here be dragons..
 
+struct Exportable {
+	bool export_;
+}
+
 // dfmt off
 mixin template ResourceInjector(string resourceName, string path = "scylla.core") {
 	import std.string;
@@ -25,12 +29,11 @@ mixin template ResourceInjector(string resourceName, string path = "scylla.core"
 	   so we can pre-define some resources that MUST exist at the start. This runs
 	   before any code is allowed to interact with/instantiate objects
 	*/
-
 	mixin("
 		import " ~ path ~ "." ~ resourceName.toLower() ~ "; 
 		bool instantiated" ~ resourceName ~ " = 
-			() {g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); 
-			    g_ResourceManager.registerClass(\"" ~ resourceName ~ "\", cast(Resource delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); 
+			() {import " ~ path ~ "." ~ resourceName.toLower ~ "; g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); 
+			    g_ResourceManager.registerClass!(" ~ resourceName ~ ")(cast(Variant delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); 
 			    return true;
 			   }();
 	");
@@ -39,10 +42,10 @@ mixin template ResourceInjector(string resourceName, string path = "scylla.core"
 
 mixin template MultiInstanceSingleton(string resourceName) {
 	mixin("
-		final shared class " ~ resourceName ~ "Singleton : ResourceSingleton {
+		final shared class " ~ resourceName ~ "Singleton : ResourceSingleton!(" ~ resourceName ~ ") {
 			
-			override Resource instantiate(string data) {
-				shared(" ~ resourceName ~ ") res = new shared(" ~ resourceName ~")(data);
+			override Object instantiate(string data) {
+				" ~ resourceName ~ " res = new " ~ resourceName ~"(data);
 				return cast(Resource)res;
 			}
 
@@ -57,19 +60,23 @@ mixin template MultiInstanceSingleton(string resourceName) {
 mixin template OneInstanceSingleton(string resourceName) {
 
 	mixin("
-		final shared class " ~ resourceName ~ "Singleton : ResourceSingleton {
+		final shared class " ~ resourceName ~ "Singleton : ResourceSingleton!(" ~ resourceName ~ ") {
 			private { 
 				bool created = false;
 			}
 
-			override Resource instantiate(string data) {
+			override Variant instantiate(string data) {
+				Variant v = null;
 				if(created) {
-					return null;
+					return v;
 				}
 
-				shared(" ~ resourceName ~ ") res = new shared(" ~ resourceName ~ ")(data);
+
+				" ~ resourceName ~ " res = new " ~ resourceName ~ "(data);
+				Resource!(" ~ resourceName ~ ") _res = new Resource!(" ~ resourceName ~ ")(res);
+				v = _res;
 				created = true;
-				return cast(Resource)res;
+				return v;
 			}
 
 			this() {
@@ -103,33 +110,108 @@ NOTE: This class is ONLY intended for sub-MB files.
 If your metadata is getting to anything ABOVE 10Mb, THIS WILL BECOME A MAJOR ISSUE!
 */
 
-shared class Resource {
-	protected {
-		bool deployed = false;
-		Mutex mtx;
-		ResourceIdentifier self;
 
-		DateTime creation_date;
-		string[] connections;
-	}
+/*
+   Ensure that we are the only person on this, then use it
+*/
 
-	/* 
-	   Persistent storage for variables
-	   Persists even across restarts of the program
-	   Store nothing sensitive in this
-	 */
-	ResourceStorage storage;
+mixin template EnsureNonNull() {
+	enum EnsureNonNull = "
+			while(activeMutexes != 0) {
+				import core.thread, core.time;
+				Thread.sleep(1.msecs);
+			}
+
+			activeMutexes++;
+			scope(exit) activeMutexes--;
+	";
+}
+
+interface GenericResource {
+	@property bool exportable();
+
+	@property string getClass();
+
+	@property string status(string setStatus);
+	@property string status();
+
+	@property ResourceIdentifier self();
+
+	@property DateTime creation();
+	@property DateTime creation(DateTime date);
+
+	@property ResourceStorage storage();
+	@property ResourceStorage storage(ResourceStorage storage);
+
+	ubyte[] exportResource();
+	bool destroy();
+	bool deploy();
+	bool connect(ResourceIdentifier id);
+	bool disconnect(ResourceIdentifier id);
+	bool canDisconnect(ResourceIdentifier id);
+}
+
+
+
+
+class Resource(T) : GenericResource {
+
+	T _inside;
+	Mutex mtx;
+	ResourceIdentifier _self;
+	
+	DateTime creation_date;
+	ResourceIdentifier[] connection_table;
+	file_entry[] file_table;
+
+	ResourceStorage _storage;
+	string _status;
+	bool deployed = false;
 
 	file_entry[] getFiles() {
-		return null;
+		return file_table;
 	}
 
-	abstract string getClass();
-	abstract string getStatus();
-	abstract bool exportable();
+	@property bool exportable() { 
+		return __traits(getAttributes, T)[0];
+	}
 
-	@property Variant opDispatch(string target)() const {
+	@property string getClass() {
+		return __traits(identifier, T);
+	}
 
+	@property string status(string setStatus) {
+		_status = setStatus;
+		return _status;
+	}
+
+	@property string status() {
+		return _status;
+	}
+
+	@property ResourceIdentifier self() {
+		return self;
+	}
+
+	@property DateTime creation() {
+		return creation_date;
+	}
+
+	@property DateTime creation(DateTime date) {
+		creation_date = date;
+		return creation_date;
+	}
+
+	@property ResourceStorage storage() {
+		return _storage;
+	}
+
+	@property ResourceStorage storage(ResourceStorage st) {
+		_storage = st;
+		return storage;
+	}
+
+/*	@property Variant opDispatch(string target)() const {
 		Variant ret = 0;
 
 		if (storage != null) {
@@ -146,6 +228,14 @@ shared class Resource {
 
 		return ret;
 	}
+	*/
+
+
+
+	/*
+		This borrows the object inside,
+		nulls it, and sets a mutex. 
+	*/
 
 	ubyte[] exportResource() {
 		// The MinimalResource struct
@@ -160,15 +250,19 @@ shared class Resource {
 		// will use the ResourceStorage
 		// to store configurations and have
 		// it persistent.
+		mixin EnsureNonNull;
+
 		if (!exportable) {
 			return null;
 		}
+
 		MinimalResource res = MinimalResource();
+
 		DateTime _creation = creation_date;
 		res.creation_time = _creation.toISOExtString();
 		res.id = self;
 		res.deployed = deployed;
-		res.connections = g_ResourceManager.getConnections(self);
+		res.connections = connection_table;
 		if (storage !is null) {
 			ResourceStorage _storage = cast(ResourceStorage) storage;
 			res.resources = _storage.exportAll();
@@ -180,6 +274,10 @@ shared class Resource {
 	}
 
 	bool destroy() {
+		mixin EnsureNonNull;
+
+		_inside.destroy(); 
+
 		import std.process, std.file;
 
 		import std.stdio : writefln;
@@ -237,9 +335,13 @@ shared class Resource {
 
 	bool deploy() {
 		/* DANGEROUS */
+		mixin EnsureNonNull;
+
 		if (deployed) {
 			return false;
 		}
+
+		_inside.deploy();
 
 		ResourceStorage st = cast(ResourceStorage) storage;
 		if (!(st is null)) {
@@ -251,25 +353,45 @@ shared class Resource {
 		return true;
 	}
 
-	abstract bool connect(ResourceIdentifier id) {
+	bool connect(ResourceIdentifier id) {
+		mixin EnsureNonNull;
+
 		if (id.zone.zoneId != regionID) {
 			return false;
 		}
-		connections ~= id.uuid;
+		connection_table ~= id;
+		_inside.connect(id);
 		return true;
 	}
 
-	abstract bool disconnect(ResourceIdentifier id) {
-		if (connections.canFind(id.uuid)) {
-			connections.remove!(a => a == id.uuid)();
+	bool disconnect(ResourceIdentifier id) {
+		mixin EnsureNonNull;
+
+		foreach(i, c; connection_table) {
+			if(c.uuid == id.uuid) {
+				connection_table.remove(i);
+			}
+		}
+
+		if(_inside.canDisconnect(id)) {
+			_inside.disconnect(id);
 			return true;
 		}
 		return false;
 	}
 
-	abstract bool canDisconnect(ResourceIdentifier id);
+	bool canDisconnect(ResourceIdentifier id) {
+		mixin EnsureNonNull;
+		if(!deployed) {
+			return false;
+		}
 
-	void useResource() shared @safe nothrow @nogc {
+		return _inside.canDisconnect(id);
+	}
+
+
+
+	Unique!(T) useResource() {
 		import core.thread;
 		import std.datetime;
 
@@ -278,14 +400,30 @@ shared class Resource {
 		}
 
 		activeMutexes++;
-
+		
+		Unique!(T) res = _inside; //THIS NULLS THE OPERATION INSIDE
+		return res;
 	}
 
-	void releaseResource() shared @safe nothrow @nogc {
+	void releaseResource(Unique!(T) res) {
 		assert(activeMutexes != 0, "releaseResource called when there are no active mutexes!");
+
+		//consume it rawr
+		import std.algorithm.mutation : move;
+		T _res = cast(T)res;
+		_inside = move(_res);
 
 		activeMutexes--;
 		mtx.unlock_nothrow();
+	}
+
+	this(string data) {
+		_inside = new T(data);
+	}
+
+	this(T inside) {
+		import std.algorithm.mutation : move;
+		_inside = move(inside);
 	}
 }
 
@@ -297,9 +435,10 @@ shared class Resource {
    likely to be accessed by the ResourceManager thread.
 */
 
-shared class ResourceSingleton {
+shared class ResourceSingleton(T) {
 	Mutex mtx;
-	abstract Resource instantiate(string data);
+	abstract Variant instantiate(string data);
+
 	void useResource() shared @safe nothrow @nogc {
 		mtx.lock_nothrow();
 	}
@@ -308,11 +447,6 @@ shared class ResourceSingleton {
 		mtx.unlock_nothrow();
 	}
 
-}
-
-shared class OneConnectionResource : Resource { //for example, network interfaces
-	bool attached = false;
-	ResourceIdentifier owner;
 }
 
 /*
@@ -328,14 +462,17 @@ instance of the resource! This is a requirement of the dynamic
 instantiation system!
 */
 import dfuse.fuse;
+import std.typecons;
+import std.typetuple;
+import std.traits;
 
 class ResourceManager {
 	private {
 		Fuse[] resourceFS;
-		shared(Resource)[string] _resources;
+		Variant[string] _resources;
 		ResourceIdentifier[][string] _connections;
+		Variant delegate(string)[string] _instanceTable;
 
-		Resource delegate(string)[string] _instanceTable;
 		string askForUUID() {
 			import std.uuid;
 
@@ -363,22 +500,24 @@ class ResourceManager {
 		return false;
 	}
 
-	void registerClass(string _className, Resource delegate(string) dlg) {
-		assert(!(_className in _instanceTable), "Cannot override delegate for class..");
+	void registerClass(_class)(Variant delegate(string) dlg) {
+		assert(!(__traits(identifier, _class) in _instanceTable), "Cannot override delegate for class..");
 
 		assert(dlg != null, "dlg was null!");
 
-		_instanceTable[_className] = cast(Resource delegate(string)) dlg;
+		_instanceTable[__traits(identifier, _class)] = cast(Variant delegate(string)) dlg;
 	}
 
 	ResourceIdentifier instantiateFromBackup(ubyte[] data) {
 		MinimalResource res = MinimalResource(data);
 		assert(res.resourceClass in _instanceTable, "Non-existant class loaded");
 
-		Resource r = _instanceTable[res.resourceClass](res.id.uuid);
+		auto _r = _instanceTable[res.resourceClass](res.id.uuid);
+		auto r = _r.peek!(GenericResource);
+
 		assert(!(r is null), "Resource was null when attempting to load from a backup.");
 
-		r.creation_date = cast(shared(DateTime)) DateTime.fromISOExtString(res.creation_time);
+		r.creation = cast(shared(DateTime)) DateTime.fromISOExtString(res.creation_time);
 		_connections[res.id.uuid] = res.connections;
 
 		if (r.storage !is null) {
@@ -387,65 +526,45 @@ class ResourceManager {
 		}
 
 		if (res.deployed) {
-			shared(Resource) _s = cast(shared(Resource)) r;
-			assert(_s.deploy(), "Deploy failed..");
+			assert(r.deploy(), "Deploy failed..");
 		}
 
-		_resources[res.id.uuid] = cast(shared(Resource)) r;
+		_resources[res.id.uuid] = _r;
 
 		return res.id;
 	}
 
-	ResourceIdentifier instantiateResource(string _class) {
-		assert(_class in _instanceTable, "Class must exist..");
+	ResourceIdentifier instantiateResource(_class)() {
+		assert(__traits(identifier, _class) in _instanceTable, "Class must exist..");
+
+		string className = __traits(identifier, _class);
 
 		string objectUUID = askForUUID();
-		Resource r = _instanceTable[_class](objectUUID);
+		auto _r = _instanceTable[className](objectUUID);
+		auto r = _r.peek!(Resource!(_class));
 
 		assert(!(r is null), "Resource was null during instantiation");
 
 		import bap.core.utils;
 
-		r.creation_date = cast(shared(DateTime)) Clock.currTime();
+		r.creation = cast(shared(DateTime)) Clock.currTime();
 
-		_resources[objectUUID] = cast(shared Resource) r;
+		_resources[objectUUID] = _r;
 
 		return id(regionID, objectUUID);
 	}
 
-	string resourceStatus(ResourceIdentifier id) {
-		if (id.uuid in _resources) {
-			shared Resource r = _resources[id.uuid];
-			r.useResource();
-			string status = r.getStatus().idup;
-			r.releaseResource();
+	// RAII
 
-			return status;
-		} else {
-			return "NO_EXIST";
-		}
-	}
-
-	bool destroyResource(ResourceIdentifier id) {
+	Resource!T getResource(T)(ResourceIdentifier id) {
 		if (id.uuid in _resources) {
-			if (id.uuid in _connections) {
+			auto o = _resources[id.uuid];
+			if(o.peek!(Resource!T)) {
+				Resource!T res = o.get!(Resource!T);
+				return res;
 			}
-			shared Resource r = _resources[id.uuid];
-			r.useResource();
-			bool status = r.destroy();
-			r.releaseResource();
-
-			_resources.remove(id.uuid);
-			return status;
 		}
-		return false;
-	}
-
-	shared(Resource) getResource(ResourceIdentifier id) {
-		if (id.uuid in _resources) {
-			return _resources[id.uuid];
-		}
-		return null;
+		assert(0);
 	}
 
 	bool associateResource(ResourceIdentifier resource, ResourceIdentifier target) {
@@ -506,9 +625,10 @@ class ResourceManager {
 		import std.stdio;
 
 		debug writefln("called to cleanup!");
-		// PROGRAM IS ABOUT TO SHUTDOWN ANYWAYS!
-		foreach (d, k; _resources) {
+		foreach (d, _k; _resources) {
 			import std.file : write;
+
+			auto k = _k.peek!(GenericResource);
 
 			if (!(k is null)) {
 				if (k.exportable()) {
@@ -520,7 +640,6 @@ class ResourceManager {
 			}
 		}
 
-		writefln("done!");
 	}
 
 	bool requestMount(Operations op, ResourceIdentifier id) {
@@ -556,9 +675,6 @@ class ResourceManager {
 		}
 		return connections;
 
-	}
-
-	this() {
 	}
 
 }

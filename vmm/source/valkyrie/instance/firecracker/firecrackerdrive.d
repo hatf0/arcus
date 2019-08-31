@@ -3,6 +3,7 @@ import std.stdio;
 import firecracker_d.core.client;
 import bap.core.resource_manager;
 
+/*
 mixin MultiInstanceSingleton!("FirecrackerDrive");
 
 final shared class FirecrackerDrive : OneConnectionResource {
@@ -72,3 +73,4 @@ final shared class FirecrackerDrive : OneConnectionResource {
 	}
 
 }
+*/

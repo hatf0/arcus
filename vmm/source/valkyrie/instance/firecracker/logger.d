@@ -1,5 +1,6 @@
 module valkyrie.instance.firecracker.logger;
 import bap.core.resource_manager;
+/*
 
 final shared class FirecrackerVmLoggerSingleton : ResourceSingleton {
 	override Resource instantiate(string uuid) {
@@ -113,3 +114,4 @@ public:
 		mtx = new shared(Mutex)();
 	}
 }
+*/

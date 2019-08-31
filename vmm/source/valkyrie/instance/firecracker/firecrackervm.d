@@ -10,6 +10,7 @@ import core.sys.posix.signal;
 import std.concurrency;
 import bap.core.resource_manager;
 
+/*
 mixin MultiInstanceSingleton!("FirecrackerVm");
 
 final shared class FirecrackerVm : Resource {

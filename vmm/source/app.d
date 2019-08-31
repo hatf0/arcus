@@ -22,4 +22,19 @@ void main() {
 	g_ResourceManager = new ResourceManager();
 	mixin ResourceInjector!("LogEngine", "bap.core.logger");
 
+	import bap.core.logger.logengine;
+	auto id = g_ResourceManager.instantiateResource!(LogEngine);
+
+	auto t = g_ResourceManager.getResource!(LogEngine)(id);
+	
+	t.deploy();
+
+	import core.thread, core.time;
+
+	Thread.sleep(1.seconds);
+
+
+	import std.stdio;
+
+	readln();
 }
