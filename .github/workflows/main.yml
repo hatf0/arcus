@@ -24,6 +24,7 @@ jobs:
         cd protobuf-d/protoc_gen_d
         dub build
         cd ..
+        ls build/
         sudo cp build/protoc_gen_d /usr/bin/
     - name: Add the library and build it
       run: dub add-local library/
