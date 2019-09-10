@@ -15,4 +15,4 @@ jobs:
       with:
         fetch-depth: 1
     - name: Run a one-line script
-      run: echo Hello, world!
+      run: sudo apt install dub dmd
