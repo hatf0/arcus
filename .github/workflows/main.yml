@@ -17,6 +17,7 @@ jobs:
     - name: Pull dub
       run: |
         curl -fsS https://dlang.org/install.sh | bash -s dmd
+        sudo apt-get install dub
     - name: Pull protod
       run: |
         git clone https://github.com/dcarp/protobuf-d.git
