@@ -14,5 +14,18 @@ jobs:
     - uses: actions/checkout@v1
       with:
         fetch-depth: 1
-    - name: Run a one-line script
-      run: sudo apt install dub dmd
+    - name: Pull dub
+      run: |
+        sudo wget http://master.dl.sourceforge.net/project/d-apt/files/d-apt.list -O /etc/apt/sources.list.d/d-apt.list
+        sudo apt-get update && sudo apt-get -y --allow-unauthenticated install --reinstall d-apt-keyring
+        sudo apt-get update && sudo apt-get install dmd-compiler dub
+     - name: Pull protod
+       run: |
+        git clone https://github.com/dcarp/protobuf-d.git
+        cd protobuf-d/protoc_gen_d
+        dub build
+        cd ..
+        sudo cp build/protoc_gen_d /usr/bin/
+     - name: Add the library and build it
+       run: dub add-local library/
+      
