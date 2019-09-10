@@ -1,7 +1,7 @@
 module valkyrie.models.rootdriver;
-import valkyrie.models.nic;
 import bap.core.utils;
 
+/*
 mixin ProtocolBufferFromString!"
 	enum Events {
 		ALLOCATE_NIC = 0;
@@ -51,4 +51,8 @@ mixin ProtocolBufferFromString!"
 	}
 
 
+
+
+
 ";
+*/

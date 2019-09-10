@@ -1,16 +1,16 @@
 
 syntax = "proto3";
 
-package scylla.nic;
-import "zone.proto";
+package scylla.internal;
+import "scylla/internal/zone.proto";
 
 service NICHandler {
-	rpc ListNICs(scylla.zone.ZoneIdentifier) returns (stream scylla.zone.ResourceIdentifier) {}
+	rpc ListNICs(ZoneIdentifier) returns (stream ResourceIdentifier) {}
 
-	rpc GetNIC(scylla.zone.ResourceIdentifier) returns (NetworkInterface) {}
-	rpc DeleteNIC(scylla.zone.ResourceIdentifier) returns (NICReply) {}
+	rpc GetNIC(ResourceIdentifier) returns (NetworkInterface) {}
+	rpc DeleteNIC(ResourceIdentifier) returns (NICReply) {}
 
-	rpc DeployNIC(NetworkInterface) returns (scylla.zone.ResourceIdentifier) {}
+	rpc DeployNIC(NetworkInterface) returns (ResourceIdentifier) {}
 	rpc UpdateSecPol(SecPolUpdateAction) returns (NICReply) {}
 	rpc ActionNIC(NICAction) returns (NICReply) {}
 }
@@ -26,11 +26,11 @@ message NICAction {
 		ATTACH = 1;
 	}
 	Action action = 1;
-	scylla.zone.ResourceIdentifier nic = 2;
+	ResourceIdentifier nic = 2;
 }
 
 message SecPolUpdateAction {
-	scylla.zone.ResourceIdentifier id = 1;
+	ResourceIdentifier id = 1;
 	SecurityPolicy secpol = 2;
 }
 

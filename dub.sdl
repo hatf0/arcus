@@ -4,7 +4,6 @@ homepage "https://www.0xcc.pw"
 authors "hatf0"
 copyright "Copyright © 2018-2018 @hatf0"
 license "MIT"
-dependency "dproto" version="~master"
 dependency "dauth" version="~>0.6.4"
 dependency "requests" version=">=1.0.5-fixssl <1.1.0-0"
 dependency "vibe-d" version="~>0.8.4"
@@ -13,11 +12,15 @@ dependency "dfuse" version="~>0.3.1"
 dependency "asdf" version="~>0.5.0"
 dependency "library" version=">=0.0.0"
 dependency "zmqd" version="~>1.1.1"
+dependency "protobuf" version="~>0.5.4"
 targetPath "./bin"
+
+preGenerateCommands "cd protos && protoc --plugin /usr/bin/protoc-gen-d `find . -name '*.proto' | tr '\n' ' '` --d_out ../library/source/ --d_opt=message-as-struct"
 configuration "cli" {
 	targetType "executable"
 	targetName "cli"
 	sourcePaths "cli"
+	dependency "linenoise" version="~>1.1.0+1.0.0"
 }
 configuration "orchestrator" {
 	dependency "hasdata" version="~>1.1.0"

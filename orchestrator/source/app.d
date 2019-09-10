@@ -8,8 +8,6 @@ import bap.core.resource_manager;
 
 extern (C) __gshared string[] rt_options = ["gcopt=initReserve:50 profile:1"];
 
-static __gshared enum g_ClassList = ["bap.core.logger" : "LogEngine"];
-
 void main() {
 	import core.sys.posix.unistd, std.process;
 
@@ -46,8 +44,10 @@ void main() {
 
 	g_ResourceManager = new ResourceManager();
 
-	mixin injectResources!(g_classList);
+	mixin ResourceInjector!("LogEngine", "bap.core.logger");
 
+
+	/*
 	foreach (string name; dirEntries(backupPath, SpanMode.shallow)) {
 		import std.path : buildPath;
 
@@ -55,6 +55,7 @@ void main() {
 		g_ResourceManager.instantiateFromBackup(data);
 		remove(buildPath(backupPath, name));
 	}
+	*/
 
 	ScyllaServer s = new ScyllaServer("/etc/scylla/config.json");
 

@@ -3,32 +3,14 @@ import bap.core.resource_manager;
 import zmqd;
 import std.stdio;
 import core.thread, core.time;
-import dproto.dproto;
 import std.file : append;
-
-mixin ProtocolBufferFromString!"
-	enum LogLevel {
-		ERROR = 0;
-		WARNING = 1;
-		INFO = 2;
-		DEBUG = 3;
-	}
-	message LogEvent {
-		required string origin = 1;
-		required LogLevel level = 2;
-		required string message = 3;
-	}
-";
-
+import bap.internal.logger : LogLevel, LogEvent;
 import bap.core.utils;
 
 mixin OneInstanceSingleton!("LogEngine");
 
-@Exportable(false)
 class LogEngine {
-
 private:
-
 	void logInfo(string origin, string msg) {
 		LogEvent l;
 		l.level = LogLevel.INFO;
@@ -114,7 +96,8 @@ private:
 			auto frame = Frame();
 			auto r = broker.tryReceive(frame);
 			if (r[1]) {
-				LogEvent l = LogEvent(frame.data);
+				ubyte[] dat = frame.data;
+				LogEvent l = dat.fromProtobuf!LogEvent;
 				printHelper(l);
 			}
 

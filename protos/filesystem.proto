@@ -1,0 +1,21 @@
+syntax = "proto3";
+package bap.internal.fs;
+import "scylla/internal/zone.proto";
+
+message FilesystemResource {
+	string path = 1;
+	bytes data = 2;
+	bool writable = 3;
+	int32 type = 4;
+}
+
+message MinimalResource {
+	string creation_time = 1;
+	scylla.internal.ResourceIdentifier id = 2;
+	repeated FilesystemResource resources = 3;
+	string resourceClass = 4;
+	bool deployed = 5;
+	bool single_connection = 6;
+	repeated scylla.internal.ResourceIdentifier connections = 7;
+}
+

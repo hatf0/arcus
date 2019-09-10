@@ -20,9 +20,9 @@ void main() {
 	}
 	assert(kvmGroup, "expected kvm group to exist");
 	g_ResourceManager = new ResourceManager();
-	mixin ResourceInjector!("LogEngine", "bap.core.logger");
 
 	import bap.core.logger.logengine;
+	mixin ResourceInjector!("LogEngine", "bap.core.logger");
 
 	auto id = g_ResourceManager.instantiateResource!(LogEngine);
 
@@ -31,15 +31,14 @@ void main() {
 	auto _t = t.useResource();
 
 	_t.logFile = "valkyrie.log";
-	
+
 	t.releaseResource(_t);
+
 	t.deploy();
 
 	import core.thread, core.time;
 
 	runApplication();
-
-	
 
 	g_ResourceManager.cleanup();
 }

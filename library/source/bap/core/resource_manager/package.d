@@ -3,11 +3,14 @@ import std.string;
 import std.algorithm.searching;
 import std.algorithm.mutation;
 import std.datetime;
-import bap.core.resource_manager.filesystem;
+import bap.internal.fs.filesystem;
 public import std.variant : Variant;
 public import core.sync.mutex;
-public import bap.core.resource_manager.proto;
 public import bap.core.resource_manager.filesystem;
+public import scylla.internal.zone;
+public import google.protobuf;
+public import std.array : array;
+import std.exception : enforce;
 
 static __gshared ResourceManager g_ResourceManager;
 static __gshared string regionID = "example";
@@ -18,7 +21,9 @@ static int activeMutexes = 0;
 // Here be dragons..
 
 struct Exportable {
-	bool val;
+}
+
+struct Storage {
 }
 
 // dfmt off
@@ -32,10 +37,14 @@ mixin template ResourceInjector(string resourceName, string path = "scylla.core"
 	mixin("
 		import " ~ path ~ "." ~ resourceName.toLower() ~ "; 
 		bool instantiated" ~ resourceName ~ " = 
-			() {import " ~ path ~ "." ~ resourceName.toLower ~ "; g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); 
-			    g_ResourceManager.registerClass!(" ~ resourceName ~ ")(cast(Variant delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); 
-			    return true;
-			   }();
+			() {
+				import " ~ path ~ "." ~ resourceName.toLower ~ "; 
+				g_" ~ resourceName ~ "Singleton = new shared(" ~ resourceName ~ "Singleton); 
+			    
+				g_ResourceManager.registerClass!(" ~ resourceName ~ ")(
+						cast(Variant delegate(string))&g_" ~ resourceName ~ "Singleton.instantiate); 
+			    	return true;
+			}();
 	");
 
 }
@@ -72,8 +81,8 @@ mixin template OneInstanceSingleton(string resourceName) {
 				}
 
 
-				" ~ resourceName ~ " res = new " ~ resourceName ~ "(data);
-				Resource!(" ~ resourceName ~ ") _res = new Resource!(" ~ resourceName ~ ")(res);
+				Resource!(" ~ resourceName ~ ") _res = new Resource!(" ~ resourceName ~ ")(data);
+
 				v = _res;
 				created = true;
 				return v;
@@ -98,6 +107,7 @@ import std.algorithm.searching : canFind;
 
 import std.stdio : writefln;
 
+import std.traits;
 /*
    This simple FUSE driver ensures that any config files accessed
    are writable, as specified in your file_entry[] array, which was
@@ -114,7 +124,8 @@ If your metadata is getting to anything ABOVE 10Mb, THIS WILL BECOME A MAJOR ISS
    Ensure that we are the only person on this, then use it
 */
 
-string EnsureNonNull() {
+string EnsureNonNull(int length = 50)() {
+	import std.conv : to;
 	enum EnsureNonNull = "
 			import std.stdio : writeln;
 			writeln(\"Active mutexes: \", activeMutexes);
@@ -124,15 +135,15 @@ string EnsureNonNull() {
 					writeln(\"Waiting on mutex release on object\");
 				}
 
-				if(__waitCount == 50) {
-					assert(0, \"Wait count should never be this high.\");
-				}
+				enforce(__waitCount == " ~ to!string(length) ~ ", \"Wait count should never be this high.\");
 					
 				import core.thread, core.time;
 				Thread.sleep(1.seconds);
 				__waitCount++;
 
 			}
+
+			assert(!_inside.isEmpty, \"_inside should never be null!\");
 
 			activeMutexes++;
 			scope(exit) activeMutexes--;
@@ -143,7 +154,9 @@ string EnsureNonNull() {
 interface GenericResource {
 	@property bool exportable();
 
-	@property string getClass();
+	static bool hasStorage();
+
+	static string getClass();
 
 	@property string status(string setStatus);
 	@property string status();
@@ -164,9 +177,11 @@ interface GenericResource {
 	bool canDisconnect(ResourceIdentifier id);
 }
 
+// A resource is typically viewed as bei
+
 class Resource(T) : GenericResource {
 
-	T _inside;
+	Unique!T _inside;
 	Mutex mtx;
 	ResourceIdentifier _self;
 
@@ -179,14 +194,38 @@ class Resource(T) : GenericResource {
 	bool deployed = false;
 
 	file_entry[] getFiles() {
-		return file_table;
+		mixin(EnsureNonNull());
+
+		static if(hasUDA!(T, Storage)) {
+			return _inside.files;
+		}
+		else {
+			assert(0);
+		}
 	}
 
 	@property bool exportable() {
-		return __traits(getAttributes, T)[0].val;
+		static if(hasUDA!(T, Exportable)) {
+				return true;
+		}
+		return false;
 	}
 
-	@property string getClass() {
+	static bool export_() {
+		static if(hasUDA!(T, Exportable)) {
+				return true;
+		}
+		return false;
+	}
+
+	static bool hasStorage() {
+		static if(hasUDA!(T, Storage)) {
+				return true;
+		}
+		return false;
+	}
+
+	static string getClass() {
 		return __traits(identifier, T);
 	}
 
@@ -213,10 +252,14 @@ class Resource(T) : GenericResource {
 	}
 
 	@property ResourceStorage storage() {
+		assert(hasStorage(), "Called to get Storage on an object which has no storage.");
+
 		return _storage;
 	}
 
 	@property ResourceStorage storage(ResourceStorage st) {
+		assert(hasStorage(), "Called to set Storage on an object which has no storage.");
+
 		_storage = st;
 		return storage;
 	}
@@ -259,26 +302,25 @@ class Resource(T) : GenericResource {
 		// to store configurations and have
 		// it persistent.
 		mixin(EnsureNonNull());
-
-		if (!exportable) {
+		if (!export_) {
 			return null;
 		}
 
 		MinimalResource res = MinimalResource();
 
 		DateTime _creation = creation_date;
-		res.creation_time = _creation.toISOExtString();
+		res.creationTime = _creation.toISOExtString();
 		res.id = self;
 		res.deployed = deployed;
 		res.connections = connection_table;
-		if (storage !is null) {
+		if (hasStorage()) {
 			ResourceStorage _storage = cast(ResourceStorage) storage;
 			res.resources = _storage.exportAll();
 		}
 
 		res.resourceClass = getClass();
 
-		return res.serialize();
+		return res.toProtobuf.array;
 	}
 
 	bool destroy() {
@@ -290,7 +332,7 @@ class Resource(T) : GenericResource {
 
 		import std.stdio : writefln;
 
-		if (storage is null) {
+		if (!hasStorage()) {
 			return true;
 		}
 
@@ -351,13 +393,16 @@ class Resource(T) : GenericResource {
 
 		_inside.deploy();
 
-		ResourceStorage st = cast(ResourceStorage) storage;
-		if (!(st is null)) {
-			ResourceIdentifier id = cast(ResourceIdentifier) self;
+		static if(hasStorage()) {
+			ResourceStorage st = cast(ResourceStorage) storage;
+			if (!(st is null)) {
+				ResourceIdentifier id = cast(ResourceIdentifier) self;
 
-			g_ResourceManager.requestMount(st, self);
-			deployed = true;
+				g_ResourceManager.requestMount(st, self);
+			}
 		}
+
+		deployed = true;
 		return true;
 	}
 
@@ -407,8 +452,7 @@ class Resource(T) : GenericResource {
 
 		activeMutexes++;
 
-		Unique!(T) res = _inside; //THIS NULLS THE OPERATION INSIDE
-		return res;
+		return _inside.release;
 	}
 
 	void releaseResource(ref Unique!(T) res) {
@@ -417,8 +461,7 @@ class Resource(T) : GenericResource {
 		//consume it rawr
 		import std.algorithm.mutation : move;
 
-		T _res = cast(T) res;
-		_inside = move(_res);
+		_inside = res.release;
 
 		activeMutexes--;
 		mtx.unlock_nothrow();
@@ -427,13 +470,15 @@ class Resource(T) : GenericResource {
 	this(string data) {
 		_inside = new T(data);
 
+		assert(!_inside.isEmpty, "_inside is null");
+
 		mtx = new Mutex();
 	}
 
-	this(T inside) {
+	this(ref T inside) {
 		import std.algorithm.mutation : move;
 
-		_inside = move(inside);
+		_inside = inside;
 
 		mtx = new Mutex();
 	}
@@ -476,7 +521,6 @@ instantiation system!
 import dfuse.fuse;
 import std.typecons;
 import std.typetuple;
-import std.traits;
 
 class ResourceManager {
 	private {
@@ -522,7 +566,7 @@ class ResourceManager {
 	}
 
 	ResourceIdentifier instantiateFromBackup(ubyte[] data) {
-		MinimalResource res = MinimalResource(data);
+		MinimalResource res = data.fromProtobuf!MinimalResource;
 		assert(res.resourceClass in _instanceTable, "Non-existant class loaded");
 
 		auto _r = _instanceTable[res.resourceClass](res.id.uuid);
@@ -530,7 +574,7 @@ class ResourceManager {
 
 		assert(!(r is null), "Resource was null when attempting to load from a backup.");
 
-		r.creation = cast(shared(DateTime)) DateTime.fromISOExtString(res.creation_time);
+		r.creation = cast(shared(DateTime)) DateTime.fromISOExtString(res.creationTime);
 		_connections[res.id.uuid] = res.connections;
 
 		if (r.storage !is null) {
@@ -563,6 +607,9 @@ class ResourceManager {
 		import bap.core.utils;
 
 		_resources[objectUUID] = _r;
+
+		debug import std.stdio : writeln;
+		debug writeln("Registered object with class: ", className, " UUID: ", objectUUID);
 
 		return id(regionID, objectUUID);
 	}
@@ -634,10 +681,10 @@ class ResourceManager {
 
 	void cleanup() {
 		import std.stdio;
-		
-		import core.memory;
-		//GC.disable;
 
+		import core.memory;
+
+		//GC.disable;
 
 		debug writefln("called to cleanup!");
 		foreach (d, _k; _resources) {
@@ -645,7 +692,7 @@ class ResourceManager {
 
 			auto k = _k.get!(GenericResource);
 
-			if (!(k is null)) {
+			if (k !is null) {
 				if (k.exportable()) {
 					debug writefln("writing out %s", k.self.uuid);
 					write(backupPath ~ "/" ~ k.self.uuid ~ ".bak", k.exportResource());

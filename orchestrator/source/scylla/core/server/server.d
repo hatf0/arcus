@@ -13,6 +13,11 @@ import bap.core.utils;
 import asdf;
 import bap.core.resource_manager;
 
+static string productName = "Arcus";
+static string versionNumber = "v0.0.1 PreAlpha | Orchestrator";
+
+static string productString = productName ~ " " ~ versionNumber;
+
 class ScyllaServer {
 	private {
 		ScyllaConfig serverConfig;
@@ -78,19 +83,24 @@ class ScyllaServer {
 
 	this(string _configPath = "./config.json") {
 
-		ResourceIdentifier logEngine = g_ResourceManager.instantiateResource("LogEngine");
+		ResourceIdentifier logEngine = g_ResourceManager.instantiateResource!(LogEngine);
 
-		shared(Resource) _l = g_ResourceManager.getResource(logEngine);
+		auto _l = g_ResourceManager.getResource!(LogEngine)(logEngine);
 
-		_l.useResource();
+		auto l = _l.useResource();
 		{
-			LogEngine l = cast(LogEngine) _l;
 			l.logFile = "scylla.log";
-
-			_l.deploy();
 		}
-		_l.releaseResource();
+		_l.releaseResource(l);
 
+		_l.deploy();
+
+		import vibe.core.core : lowerPrivileges;
+
+		lowerPrivileges("nobody", "kvm");
+
+		import core.thread;
+		Thread.sleep(500.msecs);
 		log(LogLevel.INFO, "arcus starting up..");
 
 		configPath = _configPath;
@@ -98,9 +108,6 @@ class ScyllaServer {
 		loadConfig(configPath);
 
 		vmServer = new Kintsugi();
-		import vibe.core.core : lowerPrivileges;
-
-		lowerPrivileges("nobody", "kvm");
 	}
 
 };

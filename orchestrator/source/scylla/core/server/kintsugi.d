@@ -6,16 +6,31 @@ import std.file;
 import zmqd;
 import core.thread, core.time;
 import bap.core.utils;
-import dproto.dproto;
+import std.uuid;
+
+alias UUID = NodeId;
+
+// the user should never handle the instance configuration
+// it's more of an abstraction away from using the default structs
+
+interface OrchestratorAPI {
+@safe:
+	@property NodeId[] nodes(); // number of nodes
+	@property uint nodeCount();
+	@property string node(NodeId index); // retrieve node configuration  
+	@property string nodeKey(NodeId index); // get a temporary communication key with node
+
+	@property string launchInstance(NodeId index, ProvisioningInfo info); 
+	@property string destroyInstance(NodeId index, UUID instance); 
+}
 
 class Kintsugi {
 	private {
 		Thread workerProc;
-		string[string] vms;
 	}
 
 	void workerThread() {
-		auto worker = Socket(SocketType.pull);
+		auto worker = Socket(SocketType.rep);
 		try {
 			worker.bind("tcp://*:5556");
 			log(LogLevel.INFO, "vm server worker has binded to port 5556");
@@ -27,7 +42,19 @@ class Kintsugi {
 			auto frame = Frame();
 			auto r = worker.tryReceive(frame);
 			if (r[1]) {
+				try { 
+					auto act = frame.data.fromProtobuf!KintsugiWorkerAction;
+					KintsugiWorkerResponse resp;
+					if(act.action == KintsugiWorkerActions.HELLOACTION) {
+						resp.responseLevel = Level.INFO;
+						resp.msg = productString;
+						log(LogLevel.INFO, "received hello message");
+					}
 
+					worker.send(resp.toProtobuf.array);
+				} catch(Exception e) {
+					log(LogLevel.ERROR, "received malformed frame");
+				}
 			}
 
 			Thread.sleep(dur!"msecs"(1));
@@ -35,7 +62,7 @@ class Kintsugi {
 	}
 
 	this() {
-		log(LogLevel.INFO, "vm server booting");
+		log(LogLevel.INFO, "vm proxy server booting");
 
 		workerProc = new Thread(&workerThread);
 		workerProc.isDaemon(true);

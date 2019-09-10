@@ -1,18 +1,17 @@
 
 syntax = "proto3";
 
-package scylla.instance;
-import "drive.proto";
-import "zone.proto";
-
+package scylla.internal;
+import "scylla/internal/drive.proto";
+import "scylla/internal/zone.proto";
 
 service InstanceHandler {
-	rpc ListInstances(scylla.zone.ZoneIdentifier) returns (stream scylla.zone.ResourceIdentifier) {} //string in this case being the zone identifier
+	rpc ListInstances(ZoneIdentifier) returns (stream ResourceIdentifier) {} //string in this case being the identifier
 
-	rpc GetInstance(scylla.zone.ResourceIdentifier) returns (InstanceStatus) {}
-	rpc DeleteInstance(scylla.zone.ResourceIdentifier) returns (InstanceReply) {}
+	rpc GetInstance(ResourceIdentifier) returns (InstanceStatus) {}
+	rpc DeleteInstance(ResourceIdentifier) returns (InstanceReply) {}
 
-	rpc DeployInstance(stream ProvisioningInfo) returns (stream scylla.zone.ResourceIdentifier) {} 
+	rpc DeployInstance(stream ProvisioningInfo) returns (stream ResourceIdentifier) {} 
 	rpc UpdateInstance(InstanceUpdateAction) returns (InstanceReply) {}
 	rpc ActionInstance(InstanceAction) returns (InstanceReply) {}
 }
@@ -23,7 +22,7 @@ message InstanceReply {
 }
 
 message InstanceUpdateAction {
-	scylla.zone.ResourceIdentifier id = 1;
+	ResourceIdentifier id = 1;
 	ProvisioningInfo update = 2;
 }
 
@@ -36,7 +35,7 @@ message InstanceAction {
 		RECOVERY = 4;
 	}
 	Action action = 1;
-	scylla.zone.ResourceIdentifier instance = 2;
+	ResourceIdentifier instance = 2;
 }
 
 message ProvisioningInfo {
@@ -60,8 +59,5 @@ message InstanceStatus {
 	int64 ram = 4;
 	string template = 5;
 	Status status = 6;
-	repeated scylla.drive.Drive drive = 7;
+	repeated Drive drive = 7;
 }
-
-
-

@@ -1,10 +1,13 @@
 module bap.core.resource_manager.filesystem;
 import dfuse.fuse;
 import std.variant;
-import bap.core.resource_manager.proto;
+import bap.internal.fs.filesystem;
 import core.stdc.errno;
 import std.stdio : writefln;
 import std.algorithm.searching : canFind;
+import google.protobuf;
+import std.array : array;
+import scylla.internal.zone;
 
 void runMount(Fuse obj, Operations op, string path) {
 	obj.mount(op, path, []);
@@ -337,7 +340,7 @@ class ResourceStorage : Operations {
 			f.path = path;
 		}
 
-		return f.serialize();
+		return f.toProtobuf.array;
 	}
 
 	this(file_entry[] entries, ResourceIdentifier id) {

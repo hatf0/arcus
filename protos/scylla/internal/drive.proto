@@ -1,15 +1,15 @@
 
 syntax = "proto3"; 
 
-package scylla.drive;
-import "zone.proto";
+package scylla.internal;
+import "scylla/internal/zone.proto";
 
 service DriveHandler {
-	rpc ListDrives(scylla.zone.ZoneIdentifier) returns (stream scylla.zone.ResourceIdentifier) {}
+	rpc ListDrives(ZoneIdentifier) returns (stream ResourceIdentifier) {}
 
-	rpc GetDrive(scylla.zone.ResourceIdentifier) returns (Drive) {}
-	rpc DeleteDrive(scylla.zone.ResourceIdentifier) returns (DriveReply) {}
-	rpc DeployDrive(stream Drive) returns (stream scylla.zone.ResourceIdentifier) {}
+	rpc GetDrive(ResourceIdentifier) returns (Drive) {}
+	rpc DeleteDrive(ResourceIdentifier) returns (DriveReply) {}
+	rpc DeployDrive(stream Drive) returns (stream ResourceIdentifier) {}
 	rpc UpdateDrive(DriveUpdateAction) returns (DriveReply) {}
 	rpc ActionDrive(DriveAction) returns (DriveReply) {}
 
@@ -21,11 +21,11 @@ message DriveAction {
 		DETACH = 1;
 	}
 	Action action = 1;
-	scylla.zone.ResourceIdentifier drive = 2;
+	ResourceIdentifier id = 2;
 }
 
 message DriveUpdateAction {
-	scylla.zone.ResourceIdentifier id = 1;
+	ResourceIdentifier id = 1;
 	Drive update = 2;
 }
 	

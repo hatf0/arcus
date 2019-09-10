@@ -1,0 +1,80 @@
+
+syntax = "proto3";
+
+package scylla.internal;
+
+import "scylla/internal/instance.proto";
+import "scylla/internal/zone.proto";
+import "scylla/internal/drive.proto";
+import "scylla/internal/nic.proto";
+
+service NodeHandler {
+	rpc QueryResource(ResourceIdentifier) returns (ResourceStatus) {}
+	rpc DestroyResource(ResourceIdentifier) returns (DestroyReply) {}
+
+	rpc QuerySystemResources(ProvisioningInfo) returns (ResourceReply) {}
+	rpc CreateInstance(ProvisioningInfo) returns (ResourceIdentifier) {}
+	rpc RedeployInstance(ResourceIdentifier) returns (InstanceReply) {}
+	rpc RecoverInstance(ResourceIdentifier) returns (InstanceReply) {}
+
+	rpc CreateDrive(Drive) returns (ResourceIdentifier) {}
+	rpc RedeployDrive(ResourceIdentifier) returns (DriveReply) {}
+
+	rpc CreateNIC(NetworkInterface) returns (NICReply) {}
+	rpc UpdateSecPol(SecPolUpdateAction) returns (NICReply) {}
+	rpc AssignPublicIP(ResourceIdentifier) returns (NICReply) {}
+	rpc AssignPrivateIP(ResourceIdentifier) returns (NICReply) {}
+
+	rpc AssociateDevice(AssociationInfo) returns (AssociationReply) {}
+	rpc DisassociateDevice(AssociationInfo) returns (AssociationReply) {}
+
+	rpc GetBillableHours(ResourceIdentifier) returns (stream BillableUnit) {} 
+	rpc GetInstanceLog(ResourceIdentifier) returns (InstanceLog) {}
+}
+
+message DestroyReply {
+	int32 code = 1;
+	string info = 2;
+}
+
+message ResourceStatus {
+	string status = 1;
+	string message_class = 2;
+}
+
+message ResourceReply {
+	bool can_handle = 1;
+	int32 current_vm_count = 2;
+	int32 allocated_vcpus = 3;
+	int32 max_vcpus = 4;
+	int64 allocated_ram = 5;
+	int64 max_ram = 6;
+}
+
+
+message LogEntry {
+	int64 timestamp = 1;
+	string entry = 2;
+	string origin = 3;
+}
+
+message InstanceLog {
+	repeated LogEntry log = 1;
+}
+
+message BillableUnit {
+	int32 hourly_rate = 1;
+	int64 used = 2;
+	ResourceIdentifier resource = 3;
+}
+
+
+message AssociationReply {
+	int32 code = 1;
+	string reply = 2;
+}
+
+message AssociationInfo {
+	ResourceIdentifier resource = 1;
+	ResourceIdentifier target = 2;
+}

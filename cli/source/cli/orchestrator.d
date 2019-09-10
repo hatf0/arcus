@@ -1,25 +1,41 @@
-module scylla.models.kintsugi;
+module cli.orchestrator;
+import structs;
+import std.stdio : writeln;
+import zmqd;
 import dproto.dproto;
-import bap.core.utils;
+import bap.core.resource_manager;
 
 mixin ProtocolBufferFromString!"
-	
-	message KintsugiWorkerAction {
-		enum KintsugiWorkerActions {
+	enum KintsugiWorkerActions {
 			INSTANCEACTION = 0;
 			NICACTION = 1;
 			DRIVEACTION = 2;
 			NODEACTION = 3;
 			ZONEACTION = 4;
 			CONNECTACTION = 5;
-		}
+			HELLOACTION = 6;
+	}
 
+	message KintsugiWorkerAction {
 		KintsugiWorkerActions action = 1;
 		optional InstanceAction instanceAction = 2;
 		optional NICAction nicAction = 3; 
 		optional DriveAction driveAction = 4;
 		optional ZoneAction zoneAction = 5;
 
+	}
+
+	enum Level {
+		ERROR = 0;
+		WARNING = 1;
+		INFO = 2;
+		DEBUG = 3;
+	}
+
+	message KintsugiWorkerResponse {
+		Level responseLevel = 1;
+		optional string msg = 2;
+		optional string origin = 3;
 	}
 
 	message ConnectionAction {
@@ -33,8 +49,6 @@ mixin ProtocolBufferFromString!"
 		required ResourceIdentifier client = 3;
 	}
 
-
-	
 	message ZoneAction {
 		enum Action {
 			ENUMERATERESOURCES = 0;
@@ -98,3 +112,30 @@ mixin ProtocolBufferFromString!"
 	}
 
 ";
+
+Socket orchestratorSock;
+
+mixin Command!("connect", 2,
+(string[] args) {
+	orchestratorSock = Socket(SocketType.req);
+	orchestratorSock.connect("tcp://" ~ args[1] ~ ":5556");
+	KintsugiWorkerAction w;
+	w.action = KintsugiWorkerActions.HELLOACTION;
+	orchestratorSock.send(w.serialize());
+
+	auto f = Frame();
+	orchestratorSock.receive(f);
+
+	KintsugiWorkerResponse resp = KintsugiWorkerResponse(f.data);
+	writeln(resp.msg);
+});
+
+static menu_entry orchestratorMenu = {
+	name: "orchestrator",
+	entries: [
+	{
+		name: "connect",
+		usage: "(string ip)",
+		ptr: &__connect
+	}]
+};

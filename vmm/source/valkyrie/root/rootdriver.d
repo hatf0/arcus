@@ -2,10 +2,9 @@ module valkyrie.root.rootdriver;
 import std.algorithm.searching;
 import core.thread;
 import core.time;
-import dproto.dproto;
 import zmqd;
 import bap.core.utils;
-import valkyrie.models.nic;
+import scylla.internal.nic;
 
 void exec(string...)(string args) {
 	import std.process;
