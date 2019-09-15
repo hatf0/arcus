@@ -19,6 +19,7 @@ jobs:
         dmd-version: 2.088.0
     - name: Pull protod
       run: |
+        sudo apt-get install protobuf-compiler
         git clone https://github.com/dcarp/protobuf-d.git
         cd protobuf-d/protoc_gen_d
         dub build
