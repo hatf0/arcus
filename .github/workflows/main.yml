@@ -14,10 +14,9 @@ jobs:
     - uses: actions/checkout@v1
       with:
         fetch-depth: 1
-    - name: Pull dub
-      run: |
-        curl -fsS https://dlang.org/install.sh | bash -s dmd
-        sudo apt-get install dub
+    - uses: WebFreak001/setup-dmd@v1
+      with:
+        dmd-version: 2.088.0
     - name: Pull protod
       run: |
         git clone https://github.com/dcarp/protobuf-d.git
